@@ -1,8 +1,5 @@
 {
     "workbench.iconTheme": "vscode-icons",
     "workbench.colorTheme": "Atom One Dark",
-    "cSpell.allowCompoundWords": true,
-    "files.exclude": {
-        ".*": true
-    }
+    "cSpell.allowCompoundWords": true
 }
