@@ -52,6 +52,7 @@ RUN code-server --install-extension ms-python.python && \
 	code-server --install-extension streetsidesoftware.code-spell-checker && \
 	code-server --install-extension akamud.vscode-theme-onedark && \
 	code-server --install-extension waderyan.gitblame && \
+	code-server --install-extension CoenraadS.bracket-pair-colorizer-2 && \
 	code-server --install-extension dongli.python-preview
 
 # Setup User Visual Studio Code Extentions From Localy
