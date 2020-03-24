@@ -4,7 +4,7 @@ FROM debian
 COPY ./config/sources.list /etc/apt/sources.list
 RUN apt-get update && apt-get install -y \
 	software-properties-common build-essential \
-	bsdtar curl sudo wget git vim locales\
+	bsdtar curl sudo wget git vim locales zsh\
 	python3 python3-pip \
 	openjdk-11-jdk \
 	nodejs && \
@@ -22,7 +22,7 @@ WORKDIR /home/coder
 # Set Locale
 RUN sudo locale-gen zh_CN.UTF-8 && \
 	sudo locale-gen en_US.UTF-8 && \
-	sudo localedef -i en_US -f UTF-8 en_US.UTF-8
+	sudo localedef -i zh_CN -f UTF-8 zh_CN.UTF-8
 ENV SHELL=/bin/bash
 
 #Make USER Home Dir
@@ -34,11 +34,6 @@ RUN mkdir -p /home/coder/.local/share/code-server/User
 RUN sudo mkdir /app
 COPY . /app
 RUN sudo ln -s /app/code-server /usr/local/bin/code-server
-
-RUN sudo apt update && \
-	sudo apt install /app/extensions/google-chrome-stable_current_amd64.deb -y && \
-	sudo apt-get clean && \
-	sudo rm -rf /var/lib/apt/lists/*
 
 # Setup User Visual Studio Code Extentions From Internet
 RUN code-server --install-extension ms-python.python && \
@@ -55,8 +50,7 @@ RUN code-server --install-extension ms-python.python && \
 	code-server --install-extension CoenraadS.bracket-pair-colorizer-2
 
 # Setup User Visual Studio Code Extentions From Localy
-RUN code-server --install-extension /app/extensions/MS-CEINTL.vscode-language-pack-zh-hans-1.41.1.vsix && \
-	code-server --install-extension /app/extensions/auchenberg.vscode-browser-preview-0.5.9.vsix
+RUN code-server --install-extension /app/extensions/MS-CEINTL.vscode-language-pack-zh-hans-1.41.1.vsix
 
 # setup local language
 RUN cp /app/config/locale.json ${CODE_SERVER_HOME}/User/locale.json && \
