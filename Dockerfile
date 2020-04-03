@@ -29,14 +29,17 @@ ENV HOME_DIR "/home/coder"
 ENV CODE_SERVER_HOME "${HOME_DIR}/.local/share/code-server"
 RUN mkdir -p /home/coder/.local/share/code-server/User
 
+#Set DataVolume incase they lose ther shit.
+VOLUME [ "/home/coder" ]
+
+# Init ZSH
+RUN git clone https://github.com/robbyrussell/oh-my-zsh.git ~/.oh-my-zsh && cp /app/config/zshrc ~/.zshrc
+ENV SHELL /bin/zsh
+
 # Install VSCode Files
 RUN sudo mkdir /app
 COPY . /app
 RUN sudo ln -s /app/code-server /usr/local/bin/code-server
-
-# Init ZSH
-RUN git clone https://github.com/robbyrussell/oh-my-zsh.git ~/.oh-my-zsh && cp /app/config/zshrc ~/.zshrc
-ENV SHELL=/bin/zsh
 
 # Setup User Visual Studio Code Extentions From Internet
 RUN code-server --install-extension ms-python.python && \
@@ -58,8 +61,5 @@ RUN code-server --install-extension /app/extensions/MS-CEINTL.vscode-language-pa
 # setup local language
 RUN cp /app/config/locale.json ${CODE_SERVER_HOME}/User/locale.json && \
 	cp /app/config/settings.json ${CODE_SERVER_HOME}/User/settings.json
-
-#Set DataVolume incase they lose ther shit.
-VOLUME [ "/home/coder" ]
 
 ENTRYPOINT ["code-server", "--host", "0.0.0.0"]
