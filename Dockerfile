@@ -24,10 +24,6 @@ RUN sudo locale-gen zh_CN.UTF-8 && \
 	sudo locale-gen en_US.UTF-8 && \
 	sudo localedef -i zh_CN -f UTF-8 zh_CN.UTF-8
 
-# Init ZSH
-RUN git clone https://github.com/robbyrussell/oh-my-zsh.git ~/.oh-my-zsh && cp ./config/zshrc ~/.zshrc
-ENV SHELL=/bin/zsh
-
 #Make USER Home Dir
 ENV HOME_DIR "/home/coder"
 ENV CODE_SERVER_HOME "${HOME_DIR}/.local/share/code-server"
@@ -37,6 +33,10 @@ RUN mkdir -p /home/coder/.local/share/code-server/User
 RUN sudo mkdir /app
 COPY . /app
 RUN sudo ln -s /app/code-server /usr/local/bin/code-server
+
+# Init ZSH
+RUN git clone https://github.com/robbyrussell/oh-my-zsh.git ~/.oh-my-zsh && cp /app/config/zshrc ~/.zshrc
+ENV SHELL=/bin/zsh
 
 # Setup User Visual Studio Code Extentions From Internet
 RUN code-server --install-extension ms-python.python && \
