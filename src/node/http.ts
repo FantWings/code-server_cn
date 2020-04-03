@@ -8,10 +8,8 @@ import * as path from "path"
 import * as querystring from "querystring"
 import safeCompare from "safe-compare"
 import { Readable } from "stream"
-import * as tarFs from "tar-fs"
 import * as tls from "tls"
 import * as url from "url"
-import * as zlib from "zlib"
 import { HttpCode, HttpError } from "../common/http"
 import { normalize, Options, plural, split } from "../common/util"
 import { SocketProxyProvider } from "./socket"
@@ -147,14 +145,14 @@ export abstract class HttpProvider {
     _socket: net.Socket,
     _head: Buffer,
     /* eslint-enable @typescript-eslint/no-unused-vars */
-  ): Promise<true | undefined> {
+  ): Promise<void> {
     throw new HttpError("Not found", HttpCode.NotFound)
   }
 
   /**
    * Handle requests to the registered endpoint.
    */
-  public abstract handleRequest(route: Route, request: http.IncomingMessage): Promise<HttpResponse | undefined>
+  public abstract handleRequest(route: Route, request: http.IncomingMessage): Promise<HttpResponse>
 
   /**
    * Get the base relative to the provided route. For each slash we need to go
@@ -185,22 +183,30 @@ export abstract class HttpProvider {
   /**
    * Replace common templates strings.
    */
+  protected replaceTemplates(route: Route, response: HttpStringFileResponse, sessionId?: string): HttpStringFileResponse
+  protected replaceTemplates<T extends object>(
+    route: Route,
+    response: HttpStringFileResponse,
+    options: T,
+  ): HttpStringFileResponse
   protected replaceTemplates(
     route: Route,
     response: HttpStringFileResponse,
-    sessionId?: string,
+    sessionIdOrOptions?: string | object,
   ): HttpStringFileResponse {
-    const options: Options = {
-      base: this.base(route),
-      commit: this.options.commit,
-      logLevel: logger.level,
-      sessionId,
+    if (typeof sessionIdOrOptions === "undefined" || typeof sessionIdOrOptions === "string") {
+      sessionIdOrOptions = {
+        base: this.base(route),
+        commit: this.options.commit,
+        logLevel: logger.level,
+        sessionID: sessionIdOrOptions,
+      } as Options
     }
     response.content = response.content
       .replace(/{{COMMIT}}/g, this.options.commit)
       .replace(/{{TO}}/g, Array.isArray(route.query.to) ? route.query.to[0] : route.query.to || "/dashboard")
       .replace(/{{BASE}}/g, this.base(route))
-      .replace(/"{{OPTIONS}}"/, `'${JSON.stringify(options)}'`)
+      .replace(/"{{OPTIONS}}"/, `'${JSON.stringify(sessionIdOrOptions)}'`)
     return response
   }
 
@@ -223,25 +229,6 @@ export abstract class HttpProvider {
   protected async getUtf8Resource(...parts: string[]): Promise<HttpStringFileResponse> {
     const filePath = path.join(...parts)
     return { content: await fs.readFile(filePath, "utf8"), filePath }
-  }
-
-  /**
-   * Tar up and stream a directory.
-   */
-  protected async getTarredResource(request: http.IncomingMessage, ...parts: string[]): Promise<HttpResponse> {
-    const filePath = path.join(...parts)
-    let stream: Readable = tarFs.pack(filePath)
-    const headers: http.OutgoingHttpHeaders = {}
-    if (request.headers["accept-encoding"] && request.headers["accept-encoding"].includes("gzip")) {
-      logger.debug("gzipping tar", field("filePath", filePath))
-      const compress = zlib.createGzip()
-      stream.pipe(compress)
-      stream.on("error", (error) => compress.destroy(error))
-      stream.on("close", () => compress.end())
-      stream = compress
-      headers["content-encoding"] = "gzip"
-    }
-    return { stream, filePath, mime: "application/x-tar", cache: true, headers }
   }
 
   /**
@@ -527,11 +514,7 @@ export class HttpServer {
   private onRequest = async (request: http.IncomingMessage, response: http.ServerResponse): Promise<void> => {
     this.heart.beat()
     const route = this.parseUrl(request)
-    try {
-      const payload = this.maybeRedirect(request, route) || (await route.provider.handleRequest(route, request))
-      if (!payload) {
-        throw new HttpError("Not found", HttpCode.NotFound)
-      }
+    const write = (payload: HttpResponse): void => {
       response.writeHead(payload.redirect ? HttpCode.Redirect : payload.code || HttpCode.Ok, {
         "Content-Type": payload.mime || getMediaMime(payload.filePath),
         ...(payload.redirect ? { Location: this.constructRedirect(request, route, payload as RedirectResponse) } : {}),
@@ -542,7 +525,7 @@ export class HttpServer {
               "Set-Cookie": [
                 `${payload.cookie.key}=${payload.cookie.value}`,
                 `Path=${normalize(payload.cookie.path || "/", true)}`,
-                "HttpOnly",
+                // "HttpOnly",
                 "SameSite=strict",
               ].join(";"),
             }
@@ -563,6 +546,13 @@ export class HttpServer {
       } else {
         response.end()
       }
+    }
+    try {
+      const payload = this.maybeRedirect(request, route) || (await route.provider.handleRequest(route, request))
+      if (!payload) {
+        throw new HttpError("Not found", HttpCode.NotFound)
+      }
+      write(payload)
     } catch (error) {
       let e = error
       if (error.code === "ENOENT" || error.code === "EISDIR") {
@@ -571,9 +561,11 @@ export class HttpServer {
       logger.debug("Request error", field("url", request.url))
       logger.debug(error.stack)
       const code = typeof e.code === "number" ? e.code : HttpCode.ServerError
-      const content = (await route.provider.getErrorRoot(route, code, code, e.message)).content
-      response.writeHead(code)
-      response.end(content)
+      const payload = await route.provider.getErrorRoot(route, code, code, e.message)
+      write({
+        code,
+        ...payload,
+      })
     }
   }
 
@@ -611,7 +603,7 @@ export class HttpServer {
       (this.options.cert && !secure ? `${this.protocol}://${request.headers.host}/` : "") +
       normalize(`${route.provider.base(route)}/${payload.redirect}`, true) +
       (Object.keys(query).length > 0 ? `?${querystring.stringify(query)}` : "")
-    logger.debug("Redirecting", field("secure", !!secure), field("from", request.url), field("to", redirect))
+    logger.debug("redirecting", field("secure", !!secure), field("from", request.url), field("to", redirect))
     return redirect
   }
 
@@ -633,11 +625,7 @@ export class HttpServer {
         throw new HttpError("Not found", HttpCode.NotFound)
       }
 
-      if (
-        !(await route.provider.handleWebSocket(route, request, await this.socketProvider.createProxy(socket), head))
-      ) {
-        throw new HttpError("Not found", HttpCode.NotFound)
-      }
+      await route.provider.handleWebSocket(route, request, await this.socketProvider.createProxy(socket), head)
     } catch (error) {
       socket.destroy(error)
       logger.warn(`discarding socket connection: ${error.message}`)

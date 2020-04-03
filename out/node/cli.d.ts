@@ -26,10 +26,13 @@ export interface Args extends VsArgs {
     readonly open?: boolean;
     readonly port?: number;
     readonly socket?: string;
+    readonly "ssh-host-key"?: string;
+    readonly "disable-ssh"?: boolean;
     readonly version?: boolean;
     readonly force?: boolean;
     readonly "list-extensions"?: boolean;
     readonly "install-extension"?: string[];
+    readonly "show-versions"?: boolean;
     readonly "uninstall-extension"?: string[];
     readonly locale?: string;
     readonly _: string[];

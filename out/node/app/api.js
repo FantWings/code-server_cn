@@ -68,13 +68,13 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var logger_1 = require("@coder/logger");
+var cp = __importStar(require("child_process"));
 var fs = __importStar(require("fs-extra"));
 var path = __importStar(require("path"));
 var url = __importStar(require("url"));
 var WebSocket = __importStar(require("ws"));
 var api_1 = require("../../common/api");
 var http_1 = require("../../common/http");
-var util_1 = require("../../common/util");
 var http_2 = require("../http");
 var bin_1 = require("./bin");
 /**
@@ -88,21 +88,13 @@ var ApiHttpProvider = /** @class */ (function (_super) {
         _this.vscode = vscode;
         _this.dataDir = dataDir;
         _this.ws = new WebSocket.Server({ noServer: true });
-        _this.sessions = new Map();
         return _this;
     }
-    ApiHttpProvider.prototype.dispose = function () {
-        this.sessions.forEach(function (s) {
-            if (s.process) {
-                s.process.kill();
-            }
-        });
-    };
     ApiHttpProvider.prototype.handleRequest = function (route, request) {
         return __awaiter(this, void 0, void 0, function () {
-            var _a, _b, _c, _d, _e;
-            return __generator(this, function (_f) {
-                switch (_f.label) {
+            var _a, _b, _c, _d;
+            return __generator(this, function (_e) {
+                switch (_e.label) {
                     case 0:
                         this.ensureAuthenticated(request);
                         if (route.requestPath !== "/index.html") {
@@ -111,33 +103,30 @@ var ApiHttpProvider = /** @class */ (function (_super) {
                         _a = route.base;
                         switch (_a) {
                             case http_1.ApiEndpoint.applications: return [3 /*break*/, 1];
-                            case http_1.ApiEndpoint.session: return [3 /*break*/, 3];
+                            case http_1.ApiEndpoint.process: return [3 /*break*/, 3];
                             case http_1.ApiEndpoint.recent: return [3 /*break*/, 4];
-                            case http_1.ApiEndpoint.running: return [3 /*break*/, 6];
                         }
-                        return [3 /*break*/, 8];
+                        return [3 /*break*/, 6];
                     case 1:
                         this.ensureMethod(request);
-                        _b = {};
+                        _b = {
+                            mime: "application/json"
+                        };
                         _c = {};
                         return [4 /*yield*/, this.applications()];
-                    case 2: return [2 /*return*/, (_b.content = (_c.applications = _f.sent(),
+                    case 2: return [2 /*return*/, (_b.content = (_c.applications = _e.sent(),
                             _c),
                             _b)];
-                    case 3: return [2 /*return*/, this.session(request)];
+                    case 3: return [2 /*return*/, this.process(request)];
                     case 4:
                         this.ensureMethod(request);
-                        _d = {};
+                        _d = {
+                            mime: "application/json"
+                        };
                         return [4 /*yield*/, this.recent()];
-                    case 5: return [2 /*return*/, (_d.content = _f.sent(),
+                    case 5: return [2 /*return*/, (_d.content = _e.sent(),
                             _d)];
-                    case 6:
-                        this.ensureMethod(request);
-                        _e = {};
-                        return [4 /*yield*/, this.running()];
-                    case 7: return [2 /*return*/, (_e.content = _f.sent(),
-                            _e)];
-                    case 8: throw new http_1.HttpError("Not found", http_1.HttpCode.NotFound);
+                    case 6: throw new http_1.HttpError("Not found", http_1.HttpCode.NotFound);
                 }
             });
         });
@@ -203,48 +192,41 @@ var ApiHttpProvider = /** @class */ (function (_super) {
                             })];
                     case 1:
                         _a.sent();
-                        return [2 /*return*/, true];
+                        return [2 /*return*/];
                 }
             });
         });
     };
     /**
-     * A socket that connects to a session.
+     * A socket that connects to the process.
      */
-    ApiHttpProvider.prototype.handleRunSocket = function (route, request, socket, head) {
+    ApiHttpProvider.prototype.handleRunSocket = function (_route, request, socket, head) {
         return __awaiter(this, void 0, void 0, function () {
-            var sessionId, ws;
+            var ws;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        sessionId = route.requestPath.replace(/^\//, "");
-                        logger_1.logger.debug("connecting session", logger_1.field("sessionId", sessionId));
+                        logger_1.logger.debug("connecting to process");
                         return [4 /*yield*/, new Promise(function (resolve, reject) {
                                 _this.ws.handleUpgrade(request, socket, head, function (socket) {
                                     socket.binaryType = "arraybuffer";
-                                    var session = _this.sessions.get(sessionId);
-                                    if (!session) {
-                                        socket.close(api_1.SessionError.NotFound);
-                                        return reject(new Error("session not found"));
-                                    }
-                                    resolve(socket);
                                     socket.on("error", function (error) {
                                         socket.close(api_1.SessionError.FailedToStart);
                                         logger_1.logger.error("got error while connecting socket", logger_1.field("error", error));
                                         reject(error);
                                     });
+                                    resolve(socket);
                                 });
-                            })
-                            // Send ready message.
-                        ];
+                            })];
                     case 1:
                         ws = _a.sent();
+                        logger_1.logger.debug("connected to process");
                         // Send ready message.
                         ws.send(Buffer.from(JSON.stringify({
                             protocol: "TODO",
                         })));
-                        return [2 /*return*/, true];
+                        return [2 /*return*/];
                 }
             });
         });
@@ -270,33 +252,11 @@ var ApiHttpProvider = /** @class */ (function (_super) {
         });
     };
     /**
-     * Get a running application.
+     * Handle /process endpoint.
      */
-    ApiHttpProvider.prototype.getRunningApplication = function (sessionIdOrPath) {
-        if (!sessionIdOrPath) {
-            return undefined;
-        }
-        var sessionId = sessionIdOrPath.replace(/\//g, "");
-        var session = this.sessions.get(sessionId);
-        if (session) {
-            logger_1.logger.debug("found application by session id", logger_1.field("id", sessionId));
-            return session.app;
-        }
-        var base = util_1.normalize("/" + sessionIdOrPath);
-        session = Array.from(this.sessions.values()).find(function (s) { return s.app.path === base; });
-        if (session) {
-            logger_1.logger.debug("found application by path", logger_1.field("path", base));
-            return session.app;
-        }
-        logger_1.logger.debug("no application found matching route", logger_1.field("route", sessionIdOrPath));
-        return undefined;
-    };
-    /**
-     * Handle /session endpoint.
-     */
-    ApiHttpProvider.prototype.session = function (request) {
+    ApiHttpProvider.prototype.process = function (request) {
         return __awaiter(this, void 0, void 0, function () {
-            var data, _a, parsed, app, _b, _c;
+            var data, parsed, _a, _b, _c;
             return __generator(this, function (_d) {
                 switch (_d.label) {
                     case 0:
@@ -305,102 +265,95 @@ var ApiHttpProvider = /** @class */ (function (_super) {
                     case 1:
                         data = _d.sent();
                         if (!data) {
-                            throw new http_1.HttpError("Not found", http_1.HttpCode.NotFound);
+                            throw new http_1.HttpError("No data was provided", http_1.HttpCode.BadRequest);
                         }
+                        parsed = JSON.parse(data);
                         _a = request.method;
                         switch (_a) {
                             case "DELETE": return [3 /*break*/, 2];
-                            case "POST": return [3 /*break*/, 3];
+                            case "POST": return [3 /*break*/, 8];
                         }
-                        return [3 /*break*/, 5];
-                    case 2: return [2 /*return*/, this.deleteSession(JSON.parse(data).sessionId)];
+                        return [3 /*break*/, 10];
+                    case 2:
+                        if (!parsed.pid) return [3 /*break*/, 4];
+                        return [4 /*yield*/, this.killProcess(parsed.pid)];
                     case 3:
-                        parsed = JSON.parse(data);
-                        app = this.getRunningApplication(parsed.sessionId || parsed.path);
-                        if (app) {
-                            return [2 /*return*/, {
-                                    content: {
-                                        created: false,
-                                        sessionId: app.sessionId,
-                                    },
-                                }];
+                        _d.sent();
+                        return [3 /*break*/, 7];
+                    case 4:
+                        if (!parsed.path) return [3 /*break*/, 6];
+                        return [4 /*yield*/, this.killProcess(parsed.path)];
+                    case 5:
+                        _d.sent();
+                        return [3 /*break*/, 7];
+                    case 6: throw new Error("No pid or path was provided");
+                    case 7: return [2 /*return*/, {
+                            mime: "application/json",
+                            code: http_1.HttpCode.Ok,
+                        }];
+                    case 8:
+                        if (!parsed.exec) {
+                            throw new Error("No exec was provided");
                         }
-                        _b = {};
+                        _b = {
+                            mime: "application/json"
+                        };
                         _c = {
                             created: true
                         };
-                        return [4 /*yield*/, this.createSession(parsed)];
-                    case 4: return [2 /*return*/, (_b.content = (_c.sessionId = _d.sent(),
+                        return [4 /*yield*/, this.spawnProcess(parsed.exec)];
+                    case 9: return [2 /*return*/, (_b.content = (_c.pid = _d.sent(),
                             _c),
                             _b)];
-                    case 5: throw new http_1.HttpError("Not found", http_1.HttpCode.NotFound);
+                    case 10: throw new http_1.HttpError("Not found", http_1.HttpCode.NotFound);
                 }
             });
         });
     };
     /**
-     * Kill a session identified by `app.sessionId`.
+     * Kill a process identified by pid or path if a web app.
      */
-    ApiHttpProvider.prototype.deleteSession = function (sessionId) {
+    ApiHttpProvider.prototype.killProcess = function (pid) {
         return __awaiter(this, void 0, void 0, function () {
-            var _a, session;
+            var _a;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
-                        logger_1.logger.debug("deleting session", logger_1.field("sessionId", sessionId));
-                        _a = sessionId;
+                        if (!(typeof pid === "string")) return [3 /*break*/, 5];
+                        _a = pid;
                         switch (_a) {
-                            case "vscode": return [3 /*break*/, 1];
+                            case bin_1.Vscode.path: return [3 /*break*/, 1];
                         }
                         return [3 /*break*/, 3];
                     case 1: return [4 /*yield*/, this.vscode.dispose()];
                     case 2:
                         _b.sent();
-                        return [2 /*return*/, { code: http_1.HttpCode.Ok }];
-                    case 3:
-                        {
-                            session = this.sessions.get(sessionId);
-                            if (!session) {
-                                throw new Error("session does not exist");
-                            }
-                            if (session.process) {
-                                session.process.kill();
-                            }
-                            this.sessions.delete(sessionId);
-                            return [2 /*return*/, { code: http_1.HttpCode.Ok }];
-                        }
-                        _b.label = 4;
-                    case 4: return [2 /*return*/];
+                        return [3 /*break*/, 4];
+                    case 3: throw new Error("Process \"" + pid + "\" does not exist");
+                    case 4: return [3 /*break*/, 6];
+                    case 5:
+                        process.kill(pid);
+                        _b.label = 6;
+                    case 6: return [2 /*return*/];
                 }
             });
         });
     };
     /**
-     * Create a new session and return the session ID.
+     * Spawn a process and return the pid.
      */
-    ApiHttpProvider.prototype.createSession = function (app) {
+    ApiHttpProvider.prototype.spawnProcess = function (exec) {
         return __awaiter(this, void 0, void 0, function () {
-            var sessionId, appSession;
+            var proc;
             return __generator(this, function (_a) {
-                sessionId = Math.floor(Math.random() * 10000).toString();
-                if (this.sessions.has(sessionId)) {
-                    throw new Error("conflicting session id");
-                }
-                if (!app.exec) {
-                    throw new Error("cannot execute application with no `exec`");
-                }
-                appSession = {
-                    app: __assign(__assign({}, app), { sessionId: sessionId }),
-                };
-                this.sessions.set(sessionId, appSession);
-                try {
-                    throw new Error("TODO");
-                }
-                catch (error) {
-                    this.sessions.delete(sessionId);
-                    throw error;
-                }
-                return [2 /*return*/];
+                proc = cp.spawn(exec, {
+                    shell: process.env.SHELL || true,
+                    env: __assign({}, process.env),
+                });
+                proc.on("error", function (error) { return logger_1.logger.error("process errored", logger_1.field("pid", proc.pid), logger_1.field("error", error)); });
+                proc.on("exit", function () { return logger_1.logger.debug("process exited", logger_1.field("pid", proc.pid)); });
+                logger_1.logger.debug("started process", logger_1.field("pid", proc.pid));
+                return [2 /*return*/, proc.pid];
             });
         });
     };
@@ -423,7 +376,7 @@ var ApiHttpProvider = /** @class */ (function (_super) {
                         state = _b.apply(_a, [_d.sent()]);
                         setting = Array.isArray(state) && state.find(function (item) { return item[0] === "recently.opened"; });
                         if (!setting) {
-                            throw new Error("settings appear malformed");
+                            return [2 /*return*/, { paths: [], workspaces: [] }];
                         }
                         pathPromises_1 = {};
                         workspacePromises_1 = {};
@@ -467,25 +420,6 @@ var ApiHttpProvider = /** @class */ (function (_super) {
         });
     };
     /**
-     * Return running sessions.
-     */
-    ApiHttpProvider.prototype.running = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                return [2 /*return*/, {
-                        applications: (this.vscode.running
-                            ? [
-                                __assign(__assign({}, bin_1.Vscode), { sessionId: "vscode" }),
-                            ]
-                            : []).concat(Array.from(this.sessions).map(function (_a) {
-                            var sessionId = _a[0], session = _a[1];
-                            return (__assign(__assign({}, session.app), { sessionId: sessionId }));
-                        })),
-                    }];
-            });
-        });
-    };
-    /**
      * For these, just return the error message since they'll be requested as
      * JSON.
      */
@@ -493,6 +427,7 @@ var ApiHttpProvider = /** @class */ (function (_super) {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 return [2 /*return*/, {
+                        mime: "application/json",
                         content: JSON.stringify({ error: error }),
                     }];
             });

@@ -13,7 +13,7 @@
 	},
 	"main": "./dist/extension",
 	"categories": ["Programming Languages"],
-	"activationEvents": ["onLanguage:markdown", "onCommand:markdown.preview.toggleLock", "onCommand:markdown.preview.refresh", "onCommand:markdown.showPreview", "onCommand:markdown.showPreviewToSide", "onCommand:markdown.showLockedPreviewToSide", "onCommand:markdown.showSource", "onCommand:markdown.showPreviewSecuritySelector", "onCommand:markdown.api.render", "onWebviewPanel:markdown.preview", "onWebviewEditor:vscode.markdown.preview.editor"],
+	"activationEvents": ["onLanguage:markdown", "onCommand:markdown.preview.toggleLock", "onCommand:markdown.preview.refresh", "onCommand:markdown.showPreview", "onCommand:markdown.showPreviewToSide", "onCommand:markdown.showLockedPreviewToSide", "onCommand:markdown.showSource", "onCommand:markdown.showPreviewSecuritySelector", "onCommand:markdown.api.render", "onWebviewPanel:markdown.preview", "onCustomEditor:vscode.markdown.preview.editor"],
 	"contributes": {
 		"commands": [{
 			"command": "markdown.showPreview",
@@ -242,7 +242,7 @@
 		}],
 		"markdown.previewStyles": ["./media/markdown.css", "./media/highlight.css"],
 		"markdown.previewScripts": ["./media/index.js"],
-		"webviewEditors": [{
+		"customEditors": [{
 			"viewType": "vscode.markdown.preview.editor",
 			"displayName": "(Experimental) VS Code Markdown Preview",
 			"priority": "option",
@@ -261,7 +261,7 @@
 	"dependencies": {
 		"highlight.js": "9.15.10",
 		"markdown-it": "^10.0.0",
-		"markdown-it-front-matter": "^0.1.2",
+		"markdown-it-front-matter": "^0.2.1",
 		"vscode-extension-telemetry": "0.1.1",
 		"vscode-nls": "^4.0.0"
 	},

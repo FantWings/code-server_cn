@@ -1,7 +1,7 @@
 {
   "name": "js-debug-nightly",
   "displayName": "JavaScript Debugger (Nightly)",
-  "version": "2020.1.43263",
+  "version": "2020.2.2617",
   "publisher": "ms-vscode",
   "author": {
     "name": "Microsoft Corporation"
@@ -37,19 +37,23 @@
     "publish": "gulp publish",
     "test": "gulp && npm-run-all --parallel test:golden test:lint",
     "test:golden": "node ./out/src/test/runTest.js",
-    "test:lint": "gulp lint",
-    "intTest": "mocha --exit --timeout 20000 -s 3500 -u tdd --colors --reporter out/src/int-chrome/testSupport/loggingReporter.js \"./out/src/int-chrome/**/*.test.js\""
+    "test:lint": "gulp lint"
   },
   "dependencies": {
+    "@c4312/chromehash": "^0.2.0",
     "color": "^3.1.2",
+    "execa": "^4.0.0",
     "glob-stream": "^6.1.0",
-    "js-beautify": "^1.10.0",
+    "inversify": "^5.0.1",
+    "ip": "^1.1.5",
+    "js-beautify": "^1.10.3",
     "jsonc-parser": "^2.2.0",
-    "long": "^4.0.0",
     "micromatch": "^4.0.2",
+    "reflect-metadata": "^0.1.13",
     "source-map": "^0.7.3",
     "split2": "^3.1.1",
-    "typescript": "^3.7.4",
+    "typescript": "^3.8.1-rc",
+    "vscode-js-debug-browsers": "^1.0.0",
     "vscode-nls": "^4.1.1",
     "ws": "^7.0.1"
   },
@@ -72,6 +76,7 @@
     "@types/glob": "^7.1.1",
     "@types/glob-stream": "^6.1.0",
     "@types/http-server": "^0.10.0",
+    "@types/ip": "^1.1.0",
     "@types/js-beautify": "^1.8.1",
     "@types/json-schema": "^7.0.3",
     "@types/lodash": "^4.14.144",
@@ -103,7 +108,6 @@
     "gulp": "^4.0.2",
     "gulp-eslint": "^6.0.0",
     "gulp-filter": "^6.0.0",
-    "gulp-prettier": "^2.3.0",
     "gulp-rename": "^1.4.0",
     "gulp-replace": "^1.0.0",
     "gulp-sourcemaps": "^2.6.5",
@@ -120,6 +124,7 @@
     "mocha-multi-reporters": "^1.1.7",
     "npm-run-all": "^4.1.5",
     "nyc": "^14.1.1",
+    "prettier": "^1.19.1",
     "puppeteer": "^1.20.0",
     "request": "^2.88.0",
     "request-promise-native": "^1.0.7",
@@ -135,7 +140,8 @@
   },
   "main": "./src/extension.js",
   "enableProposedApi": true,
-  "activationEvents": ["onLanguage:json", "onDebugInitialConfigurations", "onDebugResolve:node", "onDebugResolve:extensionHost", "onDebugResolve:chrome", "onDebugResolve:pwa-node", "onDebugResolve:pwa-node-terminal", "onCommand:extension.pwa-node-debug.pickNodeProcess", "onCommand:extension.pwa-node-debug.prettyPrint", "onCommand:extension.pwa-node-debug.pickLoadedScript", "onCommand:extension.pwa-node-debug.toggleSkippingFile", "onCommand:extension.pwa-node-debug.attachNodeProcess", "onCommand:extension.pwa-node-debug.startAutoAttach", "onCommand:extension.pwa-node-debug.startWithStopOnEntry", "onCommand:extension.pwa-node-debug.npmScript", "onCommand:extension.pwa-node-debug.createDebuggerTerminal", "onDebugResolve:pwa-chrome", "onCommand:extension.pwa-chrome-debug.addCustomBreakpoints", "onCommand:extension.pwa-chrome-debug.removeAllCustomBreakpoints", "onCommand:extension.pwa-chrome-debug.removeCustomBreakpoint", "onDebugResolve:pwa-msedge", "onDebugResolve:pwa-extensionHost"],
+  "activationEvents": ["onLanguage:json", "onDebugInitialConfigurations", "onDebugResolve:node", "onDebugResolve:extensionHost", "onDebugResolve:chrome", "onDebugResolve:pwa-node", "onDebugResolve:pwa-node-terminal", "onCommand:extension.pwa-node-debug.pickNodeProcess", "onCommand:extension.pwa-node-debug.prettyPrint", "onCommand:extension.pwa-node-debug.toggleSkippingFile", "onCommand:extension.pwa-node-debug.attachNodeProcess", "onCommand:extension.pwa-node-debug.startAutoAttach", "onCommand:extension.pwa-node-debug.startWithStopOnEntry", "onCommand:extension.pwa-node-debug.npmScript", "onCommand:extension.pwa-node-debug.createDebuggerTerminal", "onDebugResolve:pwa-chrome", "onCommand:extension.pwa-chrome-debug.addCustomBreakpoints", "onCommand:extension.pwa-chrome-debug.removeAllCustomBreakpoints", "onCommand:extension.pwa-chrome-debug.removeCustomBreakpoint", "onDebugResolve:pwa-msedge", "onDebugResolve:pwa-extensionHost"],
+  "extensionKind": ["workspace"],
   "contributes": {
     "views": {
       "debug": [{
@@ -146,10 +152,7 @@
     },
     "commands": [{
       "command": "extension.pwa-node-debug.prettyPrint",
-      "title": "%pretty.print.script%"
-    }, {
-      "command": "extension.pwa-node-debug.pickLoadedScript",
-      "title": "%open.loaded.script%",
+      "title": "%pretty.print.script%",
       "category": "Debug"
     }, {
       "command": "extension.pwa-node-debug.toggleSkippingFile",
@@ -181,13 +184,10 @@
       "category": "Debug"
     }],
     "menus": {
-      "explorer/context": [{
-        "command": "extension.pwa-node-debug.pickLoadedScript",
-        "when": "resourceLangId == javascript"
-      }],
-      "editor/context": [{
-        "command": "extension.pwa-node-debug.pickLoadedScript",
-        "when": "resourceLangId == javascript"
+      "commandPalette": [{
+        "command": "extension.pwa-node-debug.prettyPrint",
+        "title": "%pretty.print.script%",
+        "when": "inDebugMode && debugType == pwa-chrome && editorLangId == javascript"
       }],
       "debug/callstack/context": [{
         "command": "extension.pwa-node-debug.toggleSkippingFile",
@@ -233,6 +233,7 @@
       "language": "html"
     }],
     "debuggers": [{
+      "aiKey": "AIF-d9b70cd4-b9f9-4d70-929b-a071c400b217",
       "configurationAttributes": {
         "attach": {
           "properties": {
@@ -254,6 +255,11 @@
             "autoAttachChildProcesses": {
               "default": true,
               "description": "%node.launch.autoAttachChildProcesses.description%",
+              "type": "boolean"
+            },
+            "continueOnAttach": {
+              "default": true,
+              "markdownDescription": "%node.attach.continueOnAttach%",
               "type": "boolean"
             },
             "cwd": {
@@ -404,7 +410,7 @@
             },
             "skipFiles": {
               "default": ["<node_internals>/**"],
-              "description": "%chrome.skipFiles.description%",
+              "description": "%browser.skipFiles.description%",
               "type": "array"
             },
             "smartStep": {
@@ -423,7 +429,7 @@
             },
             "sourceMaps": {
               "default": true,
-              "description": "%chrome.sourceMaps.description%",
+              "description": "%browser.sourceMaps.description%",
               "type": "boolean"
             },
             "timeout": {
@@ -658,7 +664,7 @@
             },
             "skipFiles": {
               "default": ["<node_internals>/**"],
-              "description": "%chrome.skipFiles.description%",
+              "description": "%browser.skipFiles.description%",
               "type": "array"
             },
             "smartStep": {
@@ -677,7 +683,7 @@
             },
             "sourceMaps": {
               "default": true,
-              "description": "%chrome.sourceMaps.description%",
+              "description": "%browser.sourceMaps.description%",
               "type": "boolean"
             },
             "stopOnEntry": {
@@ -849,6 +855,7 @@
         "PickProcess": "extension.pwa-node-debug.pickNodeProcess"
       }
     }, {
+      "aiKey": "AIF-d9b70cd4-b9f9-4d70-929b-a071c400b217",
       "configurationAttributes": {
         "launch": {
           "properties": {
@@ -953,7 +960,7 @@
             },
             "skipFiles": {
               "default": ["<node_internals>/**"],
-              "description": "%chrome.skipFiles.description%",
+              "description": "%browser.skipFiles.description%",
               "type": "array"
             },
             "smartStep": {
@@ -972,7 +979,7 @@
             },
             "sourceMaps": {
               "default": true,
-              "description": "%chrome.sourceMaps.description%",
+              "description": "%browser.sourceMaps.description%",
               "type": "boolean"
             },
             "timeout": {
@@ -1029,6 +1036,7 @@
       "languages": ["javascript", "typescript", "javascriptreact", "typescriptreact"],
       "type": "pwa-node-terminal"
     }, {
+      "aiKey": "AIF-d9b70cd4-b9f9-4d70-929b-a071c400b217",
       "configurationAttributes": {
         "launch": {
           "properties": {
@@ -1141,7 +1149,7 @@
             },
             "skipFiles": {
               "default": ["<node_internals>/**"],
-              "description": "%chrome.skipFiles.description%",
+              "description": "%browser.skipFiles.description%",
               "type": "array"
             },
             "smartStep": {
@@ -1160,7 +1168,7 @@
             },
             "sourceMaps": {
               "default": true,
-              "description": "%chrome.sourceMaps.description%",
+              "description": "%browser.sourceMaps.description%",
               "type": "boolean"
             },
             "timeout": {
@@ -1221,18 +1229,24 @@
       "languages": ["javascript", "typescript", "javascriptreact", "typescriptreact"],
       "type": "pwa-extensionHost"
     }, {
+      "aiKey": "AIF-d9b70cd4-b9f9-4d70-929b-a071c400b217",
       "configurationAttributes": {
         "attach": {
           "properties": {
             "address": {
               "default": "127.0.0.1",
-              "description": "%chrome.address.description%",
+              "description": "%browser.address.description%",
               "type": "string"
             },
             "disableNetworkCache": {
               "default": true,
-              "description": "%chrome.disableNetworkCache.description%",
+              "description": "%browser.disableNetworkCache.description%",
               "type": "boolean"
+            },
+            "inspectUri": {
+              "default": null,
+              "description": "%browser.inspectUri.description%",
+              "type": ["string", "null"]
             },
             "outFiles": {
               "default": ["${workspaceFolder}/**/*.js", "!**/node_modules/**"],
@@ -1249,7 +1263,7 @@
             },
             "pathMapping": {
               "default": {},
-              "description": "%chrome.pathMapping.description%",
+              "description": "%browser.pathMapping.description%",
               "type": "object"
             },
             "pauseForSourceMap": {
@@ -1259,7 +1273,7 @@
             },
             "port": {
               "default": 9222,
-              "description": "%chrome.port.description%",
+              "description": "%browser.port.description%",
               "type": "number"
             },
             "resolveSourceMapLocations": {
@@ -1276,7 +1290,7 @@
                 "default": {
                   "program": "node my-server.js"
                 },
-                "description": "%chrome.server.description%",
+                "description": "%browser.server.description%",
                 "properties": {
                   "address": {
                     "default": "localhost",
@@ -1469,7 +1483,7 @@
                   },
                   "skipFiles": {
                     "default": ["<node_internals>/**"],
-                    "description": "%chrome.skipFiles.description%",
+                    "description": "%browser.skipFiles.description%",
                     "type": "array"
                   },
                   "smartStep": {
@@ -1488,7 +1502,7 @@
                   },
                   "sourceMaps": {
                     "default": true,
-                    "description": "%chrome.sourceMaps.description%",
+                    "description": "%browser.sourceMaps.description%",
                     "type": "boolean"
                   },
                   "stopOnEntry": {
@@ -1643,7 +1657,7 @@
                   },
                   "skipFiles": {
                     "default": ["<node_internals>/**"],
-                    "description": "%chrome.skipFiles.description%",
+                    "description": "%browser.skipFiles.description%",
                     "type": "array"
                   },
                   "smartStep": {
@@ -1662,7 +1676,7 @@
                   },
                   "sourceMaps": {
                     "default": true,
-                    "description": "%chrome.sourceMaps.description%",
+                    "description": "%browser.sourceMaps.description%",
                     "type": "boolean"
                   },
                   "timeout": {
@@ -1733,7 +1747,7 @@
             },
             "skipFiles": {
               "default": ["<node_internals>/**"],
-              "description": "%chrome.skipFiles.description%",
+              "description": "%browser.skipFiles.description%",
               "type": "array"
             },
             "smartStep": {
@@ -1752,7 +1766,7 @@
             },
             "sourceMaps": {
               "default": true,
-              "description": "%chrome.sourceMaps.description%",
+              "description": "%browser.sourceMaps.description%",
               "type": "boolean"
             },
             "timeout": {
@@ -1794,23 +1808,17 @@
             },
             "url": {
               "default": "http://localhost:8080",
-              "description": "%chrome.url.description%",
+              "description": "%browser.url.description%",
               "type": "string"
             },
             "urlFilter": {
               "default": "",
-              "description": "%chrome.urlFilter.description%",
+              "description": "%browser.urlFilter.description%",
               "type": "string"
-            },
-            "useWebView": {
-              "default": false,
-              "description": "%edge.useWebView.description%",
-              "enum": [true, false, "advanced"],
-              "type": ["boolean", "string"]
             },
             "webRoot": {
               "default": "${workspaceFolder}",
-              "description": "%chrome.webRoot.description%",
+              "description": "%browser.webRoot.description%",
               "type": "string"
             }
           }
@@ -1819,28 +1827,33 @@
           "properties": {
             "address": {
               "default": "127.0.0.1",
-              "description": "%chrome.address.description%",
+              "description": "%browser.address.description%",
               "type": "string"
             },
             "cwd": {
               "default": null,
-              "description": "%chrome.cwd.description%",
+              "description": "%browser.cwd.description%",
               "type": "string"
             },
             "disableNetworkCache": {
               "default": true,
-              "description": "%chrome.disableNetworkCache.description%",
+              "description": "%browser.disableNetworkCache.description%",
               "type": "boolean"
             },
             "env": {
               "default": {},
-              "description": "%chrome.env.description%",
+              "description": "%browser.env.description%",
               "type": "object"
             },
             "file": {
               "default": "${workspaceFolder}/index.html",
-              "description": "%chrome.file.description%",
+              "description": "%browser.file.description%",
               "type": "string"
+            },
+            "inspectUri": {
+              "default": null,
+              "description": "%browser.inspectUri.description%",
+              "type": ["string", "null"]
             },
             "outFiles": {
               "default": ["${workspaceFolder}/**/*.js", "!**/node_modules/**"],
@@ -1857,7 +1870,7 @@
             },
             "pathMapping": {
               "default": {},
-              "description": "%chrome.pathMapping.description%",
+              "description": "%browser.pathMapping.description%",
               "type": "object"
             },
             "pauseForSourceMap": {
@@ -1867,7 +1880,7 @@
             },
             "port": {
               "default": 9222,
-              "description": "%chrome.port.description%",
+              "description": "%browser.port.description%",
               "type": "number"
             },
             "resolveSourceMapLocations": {
@@ -1880,7 +1893,7 @@
             },
             "runtimeArgs": {
               "default": [],
-              "description": "%chrome.runtimeArgs.description%",
+              "description": "%browser.runtimeArgs.description%",
               "items": {
                 "type": "string"
               },
@@ -1888,7 +1901,7 @@
             },
             "runtimeExecutable": {
               "default": "stable",
-              "description": "%chrome.runtimeExecutable.description%",
+              "description": "%browser.runtimeExecutable.description%",
               "type": ["string", "null"]
             },
             "server": {
@@ -1897,7 +1910,7 @@
                 "default": {
                   "program": "node my-server.js"
                 },
-                "description": "%chrome.server.description%",
+                "description": "%browser.server.description%",
                 "properties": {
                   "address": {
                     "default": "localhost",
@@ -2090,7 +2103,7 @@
                   },
                   "skipFiles": {
                     "default": ["<node_internals>/**"],
-                    "description": "%chrome.skipFiles.description%",
+                    "description": "%browser.skipFiles.description%",
                     "type": "array"
                   },
                   "smartStep": {
@@ -2109,7 +2122,7 @@
                   },
                   "sourceMaps": {
                     "default": true,
-                    "description": "%chrome.sourceMaps.description%",
+                    "description": "%browser.sourceMaps.description%",
                     "type": "boolean"
                   },
                   "stopOnEntry": {
@@ -2264,7 +2277,7 @@
                   },
                   "skipFiles": {
                     "default": ["<node_internals>/**"],
-                    "description": "%chrome.skipFiles.description%",
+                    "description": "%browser.skipFiles.description%",
                     "type": "array"
                   },
                   "smartStep": {
@@ -2283,7 +2296,7 @@
                   },
                   "sourceMaps": {
                     "default": true,
-                    "description": "%chrome.sourceMaps.description%",
+                    "description": "%browser.sourceMaps.description%",
                     "type": "boolean"
                   },
                   "timeout": {
@@ -2354,7 +2367,7 @@
             },
             "skipFiles": {
               "default": ["<node_internals>/**"],
-              "description": "%chrome.skipFiles.description%",
+              "description": "%browser.skipFiles.description%",
               "type": "array"
             },
             "smartStep": {
@@ -2373,7 +2386,7 @@
             },
             "sourceMaps": {
               "default": true,
-              "description": "%chrome.sourceMaps.description%",
+              "description": "%browser.sourceMaps.description%",
               "type": "boolean"
             },
             "timeout": {
@@ -2415,28 +2428,22 @@
             },
             "url": {
               "default": "http://localhost:8080",
-              "description": "%chrome.url.description%",
+              "description": "%browser.url.description%",
               "type": "string"
             },
             "urlFilter": {
               "default": "",
-              "description": "%chrome.urlFilter.description%",
+              "description": "%browser.urlFilter.description%",
               "type": "string"
-            },
-            "useWebView": {
-              "default": false,
-              "description": "%edge.useWebView.description%",
-              "enum": [true, false, "advanced"],
-              "type": ["boolean", "string"]
             },
             "userDataDir": {
               "default": true,
-              "description": "%chrome.userDataDir.description%",
+              "description": "%browser.userDataDir.description%",
               "type": ["string", "boolean"]
             },
             "webRoot": {
               "default": "${workspaceFolder}",
-              "description": "%chrome.webRoot.description%",
+              "description": "%browser.webRoot.description%",
               "type": "string"
             }
           }
@@ -2467,33 +2474,24 @@
       "languages": ["javascript", "typescript", "javascriptreact", "typescriptreact"],
       "type": "pwa-chrome"
     }, {
+      "aiKey": "AIF-d9b70cd4-b9f9-4d70-929b-a071c400b217",
       "configurationAttributes": {
-        "launch": {
+        "attach": {
           "properties": {
             "address": {
               "default": "127.0.0.1",
-              "description": "%chrome.address.description%",
-              "type": "string"
-            },
-            "cwd": {
-              "default": null,
-              "description": "%chrome.cwd.description%",
+              "description": "%browser.address.description%",
               "type": "string"
             },
             "disableNetworkCache": {
               "default": true,
-              "description": "%chrome.disableNetworkCache.description%",
+              "description": "%browser.disableNetworkCache.description%",
               "type": "boolean"
             },
-            "env": {
-              "default": {},
-              "description": "%chrome.env.description%",
-              "type": "object"
-            },
-            "file": {
-              "default": "${workspaceFolder}/index.html",
-              "description": "%chrome.file.description%",
-              "type": "string"
+            "inspectUri": {
+              "default": null,
+              "description": "%browser.inspectUri.description%",
+              "type": ["string", "null"]
             },
             "outFiles": {
               "default": ["${workspaceFolder}/**/*.js", "!**/node_modules/**"],
@@ -2510,7 +2508,7 @@
             },
             "pathMapping": {
               "default": {},
-              "description": "%chrome.pathMapping.description%",
+              "description": "%browser.pathMapping.description%",
               "type": "object"
             },
             "pauseForSourceMap": {
@@ -2520,7 +2518,7 @@
             },
             "port": {
               "default": 9222,
-              "description": "%chrome.port.description%",
+              "description": "%browser.port.description%",
               "type": "number"
             },
             "resolveSourceMapLocations": {
@@ -2531,26 +2529,13 @@
               },
               "type": ["array", "null"]
             },
-            "runtimeArgs": {
-              "default": [],
-              "description": "%chrome.runtimeArgs.description%",
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            "runtimeExecutable": {
-              "default": "stable",
-              "description": "%chrome.runtimeExecutable.description%",
-              "type": ["string", "null"]
-            },
             "server": {
               "oneOf": [{
                 "additionalProperties": false,
                 "default": {
                   "program": "node my-server.js"
                 },
-                "description": "%chrome.server.description%",
+                "description": "%browser.server.description%",
                 "properties": {
                   "address": {
                     "default": "localhost",
@@ -2743,7 +2728,7 @@
                   },
                   "skipFiles": {
                     "default": ["<node_internals>/**"],
-                    "description": "%chrome.skipFiles.description%",
+                    "description": "%browser.skipFiles.description%",
                     "type": "array"
                   },
                   "smartStep": {
@@ -2762,7 +2747,7 @@
                   },
                   "sourceMaps": {
                     "default": true,
-                    "description": "%chrome.sourceMaps.description%",
+                    "description": "%browser.sourceMaps.description%",
                     "type": "boolean"
                   },
                   "stopOnEntry": {
@@ -2917,7 +2902,7 @@
                   },
                   "skipFiles": {
                     "default": ["<node_internals>/**"],
-                    "description": "%chrome.skipFiles.description%",
+                    "description": "%browser.skipFiles.description%",
                     "type": "array"
                   },
                   "smartStep": {
@@ -2936,7 +2921,7 @@
                   },
                   "sourceMaps": {
                     "default": true,
-                    "description": "%chrome.sourceMaps.description%",
+                    "description": "%browser.sourceMaps.description%",
                     "type": "boolean"
                   },
                   "timeout": {
@@ -3007,7 +2992,7 @@
             },
             "skipFiles": {
               "default": ["<node_internals>/**"],
-              "description": "%chrome.skipFiles.description%",
+              "description": "%browser.skipFiles.description%",
               "type": "array"
             },
             "smartStep": {
@@ -3026,7 +3011,7 @@
             },
             "sourceMaps": {
               "default": true,
-              "description": "%chrome.sourceMaps.description%",
+              "description": "%browser.sourceMaps.description%",
               "type": "boolean"
             },
             "timeout": {
@@ -3068,28 +3053,652 @@
             },
             "url": {
               "default": "http://localhost:8080",
-              "description": "%chrome.url.description%",
+              "description": "%browser.url.description%",
               "type": "string"
             },
             "urlFilter": {
               "default": "",
-              "description": "%chrome.urlFilter.description%",
+              "description": "%browser.urlFilter.description%",
               "type": "string"
             },
             "useWebView": {
               "default": false,
               "description": "%edge.useWebView.description%",
-              "enum": [true, false, "advanced"],
-              "type": ["boolean", "string"]
+              "type": "boolean"
+            },
+            "webRoot": {
+              "default": "${workspaceFolder}",
+              "description": "%browser.webRoot.description%",
+              "type": "string"
+            }
+          }
+        },
+        "launch": {
+          "properties": {
+            "address": {
+              "default": "127.0.0.1",
+              "description": "%browser.address.description%",
+              "type": "string"
+            },
+            "cwd": {
+              "default": null,
+              "description": "%browser.cwd.description%",
+              "type": "string"
+            },
+            "disableNetworkCache": {
+              "default": true,
+              "description": "%browser.disableNetworkCache.description%",
+              "type": "boolean"
+            },
+            "env": {
+              "default": {},
+              "description": "%browser.env.description%",
+              "type": "object"
+            },
+            "file": {
+              "default": "${workspaceFolder}/index.html",
+              "description": "%browser.file.description%",
+              "type": "string"
+            },
+            "inspectUri": {
+              "default": null,
+              "description": "%browser.inspectUri.description%",
+              "type": ["string", "null"]
+            },
+            "outFiles": {
+              "default": ["${workspaceFolder}/**/*.js", "!**/node_modules/**"],
+              "description": "%outFiles.description%",
+              "items": {
+                "type": "string"
+              },
+              "type": ["array"]
+            },
+            "outputCapture": {
+              "default": "console",
+              "description": "%node.launch.outputCapture.description%",
+              "enum": ["console", "std"]
+            },
+            "pathMapping": {
+              "default": {},
+              "description": "%browser.pathMapping.description%",
+              "type": "object"
+            },
+            "pauseForSourceMap": {
+              "default": false,
+              "markdownDescription": "%node.pauseForSourceMap.description%",
+              "type": "boolean"
+            },
+            "port": {
+              "default": 9222,
+              "description": "%browser.port.description%",
+              "type": "number"
+            },
+            "resolveSourceMapLocations": {
+              "default": null,
+              "description": "%node.resolveSourceMapLocations.description%",
+              "items": {
+                "type": "string"
+              },
+              "type": ["array", "null"]
+            },
+            "runtimeArgs": {
+              "default": [],
+              "description": "%browser.runtimeArgs.description%",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "runtimeExecutable": {
+              "default": "stable",
+              "description": "%browser.runtimeExecutable.description%",
+              "type": ["string", "null"]
+            },
+            "server": {
+              "oneOf": [{
+                "additionalProperties": false,
+                "default": {
+                  "program": "node my-server.js"
+                },
+                "description": "%browser.server.description%",
+                "properties": {
+                  "address": {
+                    "default": "localhost",
+                    "description": "%node.address.description%",
+                    "type": "string"
+                  },
+                  "args": {
+                    "default": [],
+                    "description": "%node.launch.args.description%",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "autoAttachChildProcesses": {
+                    "default": true,
+                    "description": "%node.launch.autoAttachChildProcesses.description%",
+                    "type": "boolean"
+                  },
+                  "console": {
+                    "default": "internalConsole",
+                    "description": "%node.launch.console.description%",
+                    "enum": ["internalConsole", "integratedTerminal", "externalTerminal"],
+                    "enumDescriptions": ["%node.launch.console.internalConsole.description%", "%node.launch.console.integratedTerminal.description%", "%node.launch.console.externalTerminal.description%"],
+                    "type": "string"
+                  },
+                  "cwd": {
+                    "default": "${workspaceFolder}",
+                    "description": "%node.launch.cwd.description%",
+                    "type": "string"
+                  },
+                  "env": {
+                    "additionalProperties": {
+                      "type": ["string", "null"]
+                    },
+                    "default": {},
+                    "markdownDescription": "%node.launch.env.description%",
+                    "type": "object"
+                  },
+                  "envFile": {
+                    "default": "${workspaceFolder}/.env",
+                    "description": "%node.launch.envFile.description%",
+                    "type": "string"
+                  },
+                  "localRoot": {
+                    "default": null,
+                    "description": "%node.localRoot.description%",
+                    "type": ["string", "null"]
+                  },
+                  "outFiles": {
+                    "default": ["${workspaceFolder}/**/*.js", "!**/node_modules/**"],
+                    "description": "%outFiles.description%",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": ["array"]
+                  },
+                  "outputCapture": {
+                    "default": "console",
+                    "description": "%node.launch.outputCapture.description%",
+                    "enum": ["console", "std"]
+                  },
+                  "pauseForSourceMap": {
+                    "default": false,
+                    "markdownDescription": "%node.pauseForSourceMap.description%",
+                    "type": "boolean"
+                  },
+                  "port": {
+                    "default": 9229,
+                    "description": "%node.port.description%",
+                    "type": "number"
+                  },
+                  "program": {
+                    "default": "",
+                    "description": "%node.launch.program.description%",
+                    "type": "string"
+                  },
+                  "remoteRoot": {
+                    "default": null,
+                    "description": "%node.remoteRoot.description%",
+                    "type": ["string", "null"]
+                  },
+                  "resolveSourceMapLocations": {
+                    "default": ["${workspaceFolder}/**", "!**/node_modules/**"],
+                    "description": "%node.resolveSourceMapLocations.description%",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": ["array", "null"]
+                  },
+                  "restart": {
+                    "default": true,
+                    "description": "%node.attach.restart.description%",
+                    "oneOf": [{
+                      "type": "boolean"
+                    }, {
+                      "properties": {
+                        "exponential": {
+                          "properties": {
+                            "exponent": {
+                              "default": 2,
+                              "minimum": 1,
+                              "type": "number"
+                            },
+                            "initialDelay": {
+                              "default": 128,
+                              "minimum": 0,
+                              "type": "number"
+                            },
+                            "maxAttempts": {
+                              "default": 10,
+                              "minimum": 0,
+                              "type": "number"
+                            },
+                            "maxDelay": {
+                              "default": 10000,
+                              "minimum": 0,
+                              "type": "number"
+                            }
+                          },
+                          "type": "object"
+                        }
+                      },
+                      "required": ["exponential"],
+                      "type": "object"
+                    }, {
+                      "properties": {
+                        "static": {
+                          "properties": {
+                            "delay": {
+                              "default": 1000,
+                              "minimum": 0,
+                              "type": "number"
+                            },
+                            "maxAttempts": {
+                              "default": 10,
+                              "minimum": 0,
+                              "type": "number"
+                            }
+                          },
+                          "type": "object"
+                        }
+                      },
+                      "required": ["static"],
+                      "type": "object"
+                    }]
+                  },
+                  "runtimeArgs": {
+                    "default": [],
+                    "description": "%node.launch.runtimeArgs.description%",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "runtimeExecutable": {
+                    "default": "node",
+                    "markdownDescription": "%node.launch.runtimeExecutable.description%",
+                    "type": ["string", "null"]
+                  },
+                  "runtimeVersion": {
+                    "default": "default",
+                    "markdownDescription": "%node.launch.runtimeVersion.description%",
+                    "type": "string"
+                  },
+                  "showAsyncStacks": {
+                    "default": true,
+                    "description": "%node.showAsyncStacks.description%",
+                    "oneOf": [{
+                      "type": "boolean"
+                    }, {
+                      "properties": {
+                        "onAttach": {
+                          "default": 32,
+                          "type": "number"
+                        }
+                      },
+                      "required": ["onAttach"],
+                      "type": "object"
+                    }, {
+                      "properties": {
+                        "onceBreakpointResolved": {
+                          "default": 32,
+                          "type": "number"
+                        }
+                      },
+                      "required": ["onceBreakpointResolved"],
+                      "type": "object"
+                    }]
+                  },
+                  "skipFiles": {
+                    "default": ["<node_internals>/**"],
+                    "description": "%browser.skipFiles.description%",
+                    "type": "array"
+                  },
+                  "smartStep": {
+                    "default": true,
+                    "description": "%smartStep.description%",
+                    "type": "boolean"
+                  },
+                  "sourceMapPathOverrides": {
+                    "default": {
+                      "meteor://💻app/*": "${workspaceFolder}/*",
+                      "webpack:///./~/*": "${workspaceFolder}/node_modules/*",
+                      "webpack://?:*/*": "${workspaceFolder}/*"
+                    },
+                    "description": "%node.sourceMapPathOverrides.description%",
+                    "type": "object"
+                  },
+                  "sourceMaps": {
+                    "default": true,
+                    "description": "%browser.sourceMaps.description%",
+                    "type": "boolean"
+                  },
+                  "stopOnEntry": {
+                    "default": true,
+                    "description": "%node.stopOnEntry.description%",
+                    "type": ["boolean", "string"]
+                  },
+                  "timeout": {
+                    "default": 10000,
+                    "description": "%node.timeout.description%",
+                    "type": "number"
+                  },
+                  "trace": {
+                    "default": true,
+                    "description": "%trace.description%",
+                    "oneOf": [{
+                      "description": "%trace.boolean.description%",
+                      "type": "boolean"
+                    }, {
+                      "additionalProperties": false,
+                      "properties": {
+                        "console": {
+                          "description": "%trace.console.description%",
+                          "type": "boolean"
+                        },
+                        "level": {
+                          "description": "%trace.level.description%",
+                          "enum": ["fatal", "error", "warn", "info", "verbose"]
+                        },
+                        "logFile": {
+                          "description": "%trace.logFile.description%",
+                          "type": ["string", "null"]
+                        },
+                        "tags": {
+                          "description": "%trace.tags.description%",
+                          "items": {
+                            "enum": ["cdp", "dap", "runtime"]
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }]
+                  }
+                },
+                "type": "object"
+              }, {
+                "additionalProperties": false,
+                "default": {
+                  "program": "npm start"
+                },
+                "description": "%debug.terminal.label%",
+                "properties": {
+                  "address": {
+                    "default": "localhost",
+                    "description": "%node.address.description%",
+                    "type": "string"
+                  },
+                  "autoAttachChildProcesses": {
+                    "default": true,
+                    "description": "%node.launch.autoAttachChildProcesses.description%",
+                    "type": "boolean"
+                  },
+                  "command": {
+                    "default": "npm start",
+                    "description": "%debug.terminal.program.description%",
+                    "type": ["string", "null"]
+                  },
+                  "cwd": {
+                    "default": "${workspaceFolder}",
+                    "description": "%node.launch.cwd.description%",
+                    "type": "string"
+                  },
+                  "env": {
+                    "additionalProperties": {
+                      "type": ["string", "null"]
+                    },
+                    "default": {},
+                    "markdownDescription": "%node.launch.env.description%",
+                    "type": "object"
+                  },
+                  "envFile": {
+                    "default": "${workspaceFolder}/.env",
+                    "description": "%node.launch.envFile.description%",
+                    "type": "string"
+                  },
+                  "localRoot": {
+                    "default": null,
+                    "description": "%node.localRoot.description%",
+                    "type": ["string", "null"]
+                  },
+                  "outFiles": {
+                    "default": ["${workspaceFolder}/**/*.js", "!**/node_modules/**"],
+                    "description": "%outFiles.description%",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": ["array"]
+                  },
+                  "outputCapture": {
+                    "default": "console",
+                    "description": "%node.launch.outputCapture.description%",
+                    "enum": ["console", "std"]
+                  },
+                  "pauseForSourceMap": {
+                    "default": false,
+                    "markdownDescription": "%node.pauseForSourceMap.description%",
+                    "type": "boolean"
+                  },
+                  "port": {
+                    "default": 9229,
+                    "description": "%node.port.description%",
+                    "type": "number"
+                  },
+                  "remoteRoot": {
+                    "default": null,
+                    "description": "%node.remoteRoot.description%",
+                    "type": ["string", "null"]
+                  },
+                  "resolveSourceMapLocations": {
+                    "default": ["${workspaceFolder}/**", "!**/node_modules/**"],
+                    "description": "%node.resolveSourceMapLocations.description%",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": ["array", "null"]
+                  },
+                  "showAsyncStacks": {
+                    "default": true,
+                    "description": "%node.showAsyncStacks.description%",
+                    "oneOf": [{
+                      "type": "boolean"
+                    }, {
+                      "properties": {
+                        "onAttach": {
+                          "default": 32,
+                          "type": "number"
+                        }
+                      },
+                      "required": ["onAttach"],
+                      "type": "object"
+                    }, {
+                      "properties": {
+                        "onceBreakpointResolved": {
+                          "default": 32,
+                          "type": "number"
+                        }
+                      },
+                      "required": ["onceBreakpointResolved"],
+                      "type": "object"
+                    }]
+                  },
+                  "skipFiles": {
+                    "default": ["<node_internals>/**"],
+                    "description": "%browser.skipFiles.description%",
+                    "type": "array"
+                  },
+                  "smartStep": {
+                    "default": true,
+                    "description": "%smartStep.description%",
+                    "type": "boolean"
+                  },
+                  "sourceMapPathOverrides": {
+                    "default": {
+                      "meteor://💻app/*": "${workspaceFolder}/*",
+                      "webpack:///./~/*": "${workspaceFolder}/node_modules/*",
+                      "webpack://?:*/*": "${workspaceFolder}/*"
+                    },
+                    "description": "%node.sourceMapPathOverrides.description%",
+                    "type": "object"
+                  },
+                  "sourceMaps": {
+                    "default": true,
+                    "description": "%browser.sourceMaps.description%",
+                    "type": "boolean"
+                  },
+                  "timeout": {
+                    "default": 10000,
+                    "description": "%node.timeout.description%",
+                    "type": "number"
+                  },
+                  "trace": {
+                    "default": true,
+                    "description": "%trace.description%",
+                    "oneOf": [{
+                      "description": "%trace.boolean.description%",
+                      "type": "boolean"
+                    }, {
+                      "additionalProperties": false,
+                      "properties": {
+                        "console": {
+                          "description": "%trace.console.description%",
+                          "type": "boolean"
+                        },
+                        "level": {
+                          "description": "%trace.level.description%",
+                          "enum": ["fatal", "error", "warn", "info", "verbose"]
+                        },
+                        "logFile": {
+                          "description": "%trace.logFile.description%",
+                          "type": ["string", "null"]
+                        },
+                        "tags": {
+                          "description": "%trace.tags.description%",
+                          "items": {
+                            "enum": ["cdp", "dap", "runtime"]
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }]
+                  }
+                },
+                "type": "object"
+              }]
+            },
+            "showAsyncStacks": {
+              "default": true,
+              "description": "%node.showAsyncStacks.description%",
+              "oneOf": [{
+                "type": "boolean"
+              }, {
+                "properties": {
+                  "onAttach": {
+                    "default": 32,
+                    "type": "number"
+                  }
+                },
+                "required": ["onAttach"],
+                "type": "object"
+              }, {
+                "properties": {
+                  "onceBreakpointResolved": {
+                    "default": 32,
+                    "type": "number"
+                  }
+                },
+                "required": ["onceBreakpointResolved"],
+                "type": "object"
+              }]
+            },
+            "skipFiles": {
+              "default": ["<node_internals>/**"],
+              "description": "%browser.skipFiles.description%",
+              "type": "array"
+            },
+            "smartStep": {
+              "default": true,
+              "description": "%smartStep.description%",
+              "type": "boolean"
+            },
+            "sourceMapPathOverrides": {
+              "default": {
+                "meteor://💻app/*": "${workspaceFolder}/*",
+                "webpack:///./~/*": "${workspaceFolder}/node_modules/*",
+                "webpack://?:*/*": "${workspaceFolder}/*"
+              },
+              "description": "%node.sourceMapPathOverrides.description%",
+              "type": "object"
+            },
+            "sourceMaps": {
+              "default": true,
+              "description": "%browser.sourceMaps.description%",
+              "type": "boolean"
+            },
+            "timeout": {
+              "default": 10000,
+              "description": "%node.timeout.description%",
+              "type": "number"
+            },
+            "trace": {
+              "default": true,
+              "description": "%trace.description%",
+              "oneOf": [{
+                "description": "%trace.boolean.description%",
+                "type": "boolean"
+              }, {
+                "additionalProperties": false,
+                "properties": {
+                  "console": {
+                    "description": "%trace.console.description%",
+                    "type": "boolean"
+                  },
+                  "level": {
+                    "description": "%trace.level.description%",
+                    "enum": ["fatal", "error", "warn", "info", "verbose"]
+                  },
+                  "logFile": {
+                    "description": "%trace.logFile.description%",
+                    "type": ["string", "null"]
+                  },
+                  "tags": {
+                    "description": "%trace.tags.description%",
+                    "items": {
+                      "enum": ["cdp", "dap", "runtime"]
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              }]
+            },
+            "url": {
+              "default": "http://localhost:8080",
+              "description": "%browser.url.description%",
+              "type": "string"
+            },
+            "urlFilter": {
+              "default": "",
+              "description": "%browser.urlFilter.description%",
+              "type": "string"
+            },
+            "useWebView": {
+              "default": false,
+              "description": "%edge.useWebView.description%",
+              "type": "boolean"
             },
             "userDataDir": {
               "default": true,
-              "description": "%chrome.userDataDir.description%",
+              "description": "%browser.userDataDir.description%",
               "type": ["string", "boolean"]
             },
             "webRoot": {
               "default": "${workspaceFolder}",
-              "description": "%chrome.webRoot.description%",
+              "description": "%browser.webRoot.description%",
               "type": "string"
             }
           }
@@ -3097,16 +3706,26 @@
       },
       "configurationSnippets": [{
         "body": {
-          "name": "Launch Chrome",
+          "name": "Launch Edge",
           "request": "launch",
-          "type": "pwa-chrome",
+          "type": "pwa-msedge",
           "url": "http://localhost:8080",
           "webRoot": "^\"${2:\\${workspaceFolder\\}}\""
         },
-        "description": "%chrome.launch.description%",
-        "label": "%chrome.launch.label%"
+        "description": "%edge.launch.description%",
+        "label": "%edge.launch.label%"
+      }, {
+        "body": {
+          "name": "Attach to Chrome",
+          "port": 9222,
+          "request": "attach",
+          "type": "pwa-msedge",
+          "webRoot": "^\"${2:\\${workspaceFolder\\}}\""
+        },
+        "description": "%edge.attach.description%",
+        "label": "%edge.attach.label%"
       }],
-      "label": "%chrome.label%",
+      "label": "%edge.launch.label%",
       "languages": ["javascript", "typescript", "javascriptreact", "typescriptreact"],
       "type": "pwa-msedge"
     }],
@@ -3191,7 +3810,7 @@
             },
             "skipFiles": {
               "type": "array",
-              "description": "%chrome.skipFiles.description%",
+              "description": "%browser.skipFiles.description%",
               "default": ["<node_internals>/**"]
             },
             "smartStep": {
@@ -3201,7 +3820,7 @@
             },
             "sourceMaps": {
               "type": "boolean",
-              "description": "%chrome.sourceMaps.description%",
+              "description": "%browser.sourceMaps.description%",
               "default": true
             },
             "sourceMapPathOverrides": {
@@ -3294,6 +3913,11 @@
               "default": "npm start"
             }
           }
+        },
+        "debug.javascript.suggestPrettyPrinting": {
+          "type": "boolean",
+          "description": "%configuration.suggestPrettyPrinting%",
+          "default": true
         }
       }
     }

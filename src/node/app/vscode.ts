@@ -8,6 +8,7 @@ import * as path from "path"
 import * as url from "url"
 import {
   CodeServerMessage,
+  Options,
   StartPath,
   VscodeMessage,
   VscodeOptions,
@@ -89,7 +90,7 @@ export class VscodeHttpProvider extends HttpProvider {
     return this._vscode
   }
 
-  public async handleWebSocket(route: Route, request: http.IncomingMessage, socket: net.Socket): Promise<true> {
+  public async handleWebSocket(route: Route, request: http.IncomingMessage, socket: net.Socket): Promise<void> {
     if (!this.authenticated(request)) {
       throw new Error("not authenticated")
     }
@@ -113,7 +114,6 @@ export class VscodeHttpProvider extends HttpProvider {
 
     const vscode = await this._vscode
     this.send({ type: "socket", query: route.query }, vscode, socket)
-    return true
   }
 
   private send(message: CodeServerMessage, vscode?: cp.ChildProcess, socket?: net.Socket): void {
@@ -153,11 +153,6 @@ export class VscodeHttpProvider extends HttpProvider {
       case "/vscode-remote-resource":
         if (typeof route.query.path === "string") {
           return this.getResource(route.query.path)
-        }
-        break
-      case "/tar":
-        if (typeof route.query.path === "string") {
-          return this.getTarredResource(request, route.query.path)
         }
         break
       case "/webview":
@@ -206,7 +201,11 @@ export class VscodeHttpProvider extends HttpProvider {
       .replace(`"{{PRODUCT_CONFIGURATION}}"`, `'${JSON.stringify(options.productConfiguration)}'`)
       .replace(`"{{WORKBENCH_WEB_CONFIGURATION}}"`, `'${JSON.stringify(options.workbenchWebConfiguration)}'`)
       .replace(`"{{NLS_CONFIGURATION}}"`, `'${JSON.stringify(options.nlsConfiguration)}'`)
-    return this.replaceTemplates(route, response)
+    return this.replaceTemplates<Options>(route, response, {
+      base: this.base(route),
+      commit: this.options.commit,
+      disableTelemetry: !!this.args["disable-telemetry"],
+    })
   }
 
   /**

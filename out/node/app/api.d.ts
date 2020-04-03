@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import * as http from "http";
 import * as net from "net";
-import { Application, RecentResponse, RunningResponse } from "../../common/api";
+import { Application, RecentResponse } from "../../common/api";
 import { HttpProvider, HttpProviderOptions, HttpResponse, HttpServer, Route } from "../http";
 import { VscodeHttpProvider } from "./vscode";
 /**
@@ -12,14 +12,12 @@ export declare class ApiHttpProvider extends HttpProvider {
     private readonly vscode;
     private readonly dataDir?;
     private readonly ws;
-    private readonly sessions;
     constructor(options: HttpProviderOptions, server: HttpServer, vscode: VscodeHttpProvider, dataDir?: string | undefined);
-    dispose(): void;
     handleRequest(route: Route, request: http.IncomingMessage): Promise<HttpResponse>;
-    handleWebSocket(route: Route, request: http.IncomingMessage, socket: net.Socket, head: Buffer): Promise<true>;
+    handleWebSocket(route: Route, request: http.IncomingMessage, socket: net.Socket, head: Buffer): Promise<void>;
     private handleStatusSocket;
     /**
-     * A socket that connects to a session.
+     * A socket that connects to the process.
      */
     private handleRunSocket;
     /**
@@ -31,29 +29,21 @@ export declare class ApiHttpProvider extends HttpProvider {
      */
     installedApplications(): Promise<ReadonlyArray<Application>>;
     /**
-     * Get a running application.
+     * Handle /process endpoint.
      */
-    getRunningApplication(sessionIdOrPath?: string): Application | undefined;
+    private process;
     /**
-     * Handle /session endpoint.
+     * Kill a process identified by pid or path if a web app.
      */
-    private session;
+    killProcess(pid: number | string): Promise<void>;
     /**
-     * Kill a session identified by `app.sessionId`.
+     * Spawn a process and return the pid.
      */
-    deleteSession(sessionId: string): Promise<HttpResponse>;
-    /**
-     * Create a new session and return the session ID.
-     */
-    createSession(app: Application): Promise<string>;
+    spawnProcess(exec: string): Promise<number>;
     /**
      * Return VS Code's recent paths.
      */
     recent(): Promise<RecentResponse>;
-    /**
-     * Return running sessions.
-     */
-    running(): Promise<RunningResponse>;
     /**
      * For these, just return the error message since they'll be requested as
      * JSON.

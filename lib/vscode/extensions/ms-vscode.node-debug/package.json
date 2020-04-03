@@ -1,7 +1,7 @@
 {
 	"name": "node-debug",
 	"displayName": "Node Debug (legacy)",
-	"version": "1.42.0",
+	"version": "1.43.2",
 	"publisher": "ms-vscode",
 	"description": "%extension.description%",
 	"icon": "images/node-debug-icon.png",
@@ -26,16 +26,15 @@
 	},
 	"keywords": ["multi-root ready"],
 	"engines": {
-		"vscode": "^1.33.0",
-		"node": "^10.2.0"
+		"vscode": "^1.42.0"
 	},
 	"extensionDependencies": ["ms-vscode.node-debug2"],
 	"dependencies": {
-		"glob": "7.1.4",
+		"glob": "7.1.6",
 		"minimatch": "3.0.4",
-		"request-light": "0.2.4",
+		"request-light": "0.2.5",
 		"source-map": "0.6.1",
-		"vscode-debugadapter": "1.37.1",
+		"vscode-debugadapter": "1.39.0",
 		"vscode-nls": "4.1.1"
 	},
 	"repository": {
@@ -46,33 +45,33 @@
 		"url": "https://github.com/Microsoft/vscode-node-debug/issues"
 	},
 	"devDependencies": {
-		"@types/mocha": "5.2.7",
-		"@types/node": "10.12.12",
-		"copy-webpack-plugin": "^5.0.4",
-		"del": "5.0.0",
+		"@types/mocha": "7.0.1",
+		"@types/node": "^12.7.3",
+		"copy-webpack-plugin": "^5.1.1",
+		"del": "5.1.0",
 		"gulp": "4.0.2",
 		"gulp-filter": "6.0.0",
 		"gulp-sourcemaps": "2.6.5",
-		"gulp-tsb": "2.0.7",
+		"gulp-tsb": "4.0.5",
 		"gulp-tslint": "8.1.4",
 		"gulp-typescript": "5.0.1",
 		"gulp-uglify": "3.0.2",
-		"mocha": "6.2.0",
-		"ts-loader": "6.0.4",
-		"tslint": "5.18.0",
+		"mocha": "7.0.1",
+		"ts-loader": "~6.2.1",
+		"tslint": "6.0.0",
 		"tslint-microsoft-contrib": "6.2.0",
 		"tsutils": "3.17.1",
-		"typescript": "3.5.3",
-		"vsce": "^1.66.0",
+		"typescript": "~3.7.2",
+		"vsce": "^1.73.0",
 		"vscode": "1.1.36",
-		"vscode-debugadapter-testsupport": "1.37.1",
-		"vscode-debugprotocol": "1.37.0",
+		"vscode-debugadapter-testsupport": "1.40.2",
+		"vscode-debugprotocol": "1.39.0",
 		"vscode-nls-dev": "3.3.1",
-		"webpack": "^4.39.1",
-		"webpack-cli": "^3.3.6"
+		"webpack": "~4.41.2",
+		"webpack-cli": "~3.3.10"
 	},
 	"main": "./dist/extension.js",
-	"activationEvents": ["onDebugInitialConfigurations", "onDebugResolve:node", "onCommand:extension.pickNodeProcess", "onCommand:extension.node-debug.toggleSkippingFile", "onCommand:extension.node-debug.pickLoadedScript", "onCommand:extension.node-debug.attachNodeProcess", "onCommand:extension.node-debug.startAutoAttach", "onCommand:extension.node-debug.startWithStopOnEntry"],
+	"activationEvents": ["onDebugInitialConfigurations", "onDebugResolve:node", "onCommand:extension.pickNodeProcess", "onCommand:extension.node-debug.toggleSkippingFile", "onCommand:extension.node-debug.attachNodeProcess", "onCommand:extension.node-debug.startAutoAttach", "onCommand:extension.node-debug.startWithStopOnEntry"],
 	"contributes": {
 		"configuration": {
 			"title": "Node debug",
@@ -98,10 +97,6 @@
 			}]
 		},
 		"commands": [{
-			"command": "extension.node-debug.pickLoadedScript",
-			"title": "%open.loaded.script%",
-			"category": "Debug"
-		}, {
 			"command": "extension.node-debug.attachNodeProcess",
 			"title": "%attach.node.process%",
 			"category": "Debug"
@@ -115,11 +110,6 @@
 			"category": "Debug"
 		}],
 		"keybindings": [{
-			"command": "extension.node-debug.pickLoadedScript",
-			"key": "ctrl+f4",
-			"mac": "cmd+f4",
-			"when": "debugType == 'node'"
-		}, {
 			"command": "extension.node-debug.startWithStopOnEntry",
 			"key": "F10",
 			"mac": "F10",

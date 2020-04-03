@@ -71,9 +71,7 @@ var httpolyglot = __importStar(require("httpolyglot"));
 var path = __importStar(require("path"));
 var querystring = __importStar(require("querystring"));
 var safe_compare_1 = __importDefault(require("safe-compare"));
-var tarFs = __importStar(require("tar-fs"));
 var url = __importStar(require("url"));
-var zlib = __importStar(require("zlib"));
 var http_1 = require("../common/http");
 var util_1 = require("../common/util");
 var socket_1 = require("./socket");
@@ -136,21 +134,20 @@ var HttpProvider = /** @class */ (function () {
             });
         });
     };
-    /**
-     * Replace common templates strings.
-     */
-    HttpProvider.prototype.replaceTemplates = function (route, response, sessionId) {
-        var options = {
-            base: this.base(route),
-            commit: this.options.commit,
-            logLevel: logger_1.logger.level,
-            sessionId: sessionId,
-        };
+    HttpProvider.prototype.replaceTemplates = function (route, response, sessionIdOrOptions) {
+        if (typeof sessionIdOrOptions === "undefined" || typeof sessionIdOrOptions === "string") {
+            sessionIdOrOptions = {
+                base: this.base(route),
+                commit: this.options.commit,
+                logLevel: logger_1.logger.level,
+                sessionID: sessionIdOrOptions,
+            };
+        }
         response.content = response.content
             .replace(/{{COMMIT}}/g, this.options.commit)
             .replace(/{{TO}}/g, Array.isArray(route.query.to) ? route.query.to[0] : route.query.to || "/dashboard")
             .replace(/{{BASE}}/g, this.base(route))
-            .replace(/"{{OPTIONS}}"/, "'" + JSON.stringify(options) + "'");
+            .replace(/"{{OPTIONS}}"/, "'" + JSON.stringify(sessionIdOrOptions) + "'");
         return response;
     };
     Object.defineProperty(HttpProvider.prototype, "isDev", {
@@ -200,33 +197,6 @@ var HttpProvider = /** @class */ (function () {
                         return [4 /*yield*/, fs.readFile(filePath, "utf8")];
                     case 1: return [2 /*return*/, (_a.content = _b.sent(), _a.filePath = filePath, _a)];
                 }
-            });
-        });
-    };
-    /**
-     * Tar up and stream a directory.
-     */
-    HttpProvider.prototype.getTarredResource = function (request) {
-        var parts = [];
-        for (var _i = 1; _i < arguments.length; _i++) {
-            parts[_i - 1] = arguments[_i];
-        }
-        return __awaiter(this, void 0, void 0, function () {
-            var filePath, stream, headers, compress_1;
-            return __generator(this, function (_a) {
-                filePath = path.join.apply(path, parts);
-                stream = tarFs.pack(filePath);
-                headers = {};
-                if (request.headers["accept-encoding"] && request.headers["accept-encoding"].includes("gzip")) {
-                    logger_1.logger.debug("gzipping tar", logger_1.field("filePath", filePath));
-                    compress_1 = zlib.createGzip();
-                    stream.pipe(compress_1);
-                    stream.on("error", function (error) { return compress_1.destroy(error); });
-                    stream.on("close", function () { return compress_1.end(); });
-                    stream = compress_1;
-                    headers["content-encoding"] = "gzip";
-                }
-                return [2 /*return*/, { stream: stream, filePath: filePath, mime: "application/x-tar", cache: true, headers: headers }];
             });
         });
     };
@@ -387,12 +357,42 @@ var HttpServer = /** @class */ (function () {
         this.providers = new Map();
         this.socketProvider = new socket_1.SocketProxyProvider();
         this.onRequest = function (request, response) { return __awaiter(_this, void 0, void 0, function () {
-            var route, payload, _a, error_1, e, code, content;
+            var route, write, payload, _a, error_1, e, code, payload;
+            var _this = this;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
                         this.heart.beat();
                         route = this.parseUrl(request);
+                        write = function (payload) {
+                            response.writeHead(payload.redirect ? http_1.HttpCode.Redirect : payload.code || http_1.HttpCode.Ok, __assign(__assign(__assign(__assign(__assign({ "Content-Type": payload.mime || util_2.getMediaMime(payload.filePath) }, (payload.redirect ? { Location: _this.constructRedirect(request, route, payload) } : {})), (request.headers["service-worker"] ? { "Service-Worker-Allowed": route.provider.base(route) } : {})), (payload.cache ? { "Cache-Control": "public, max-age=31536000" } : {})), (payload.cookie
+                                ? {
+                                    "Set-Cookie": [
+                                        payload.cookie.key + "=" + payload.cookie.value,
+                                        "Path=" + util_1.normalize(payload.cookie.path || "/", true),
+                                        // "HttpOnly",
+                                        "SameSite=strict",
+                                    ].join(";"),
+                                }
+                                : {})), payload.headers));
+                            if (payload.stream) {
+                                payload.stream.on("error", function (error) {
+                                    response.writeHead(error.code === "ENOENT" ? http_1.HttpCode.NotFound : http_1.HttpCode.ServerError);
+                                    response.end(error.message);
+                                });
+                                payload.stream.on("close", function () { return response.end(); });
+                                payload.stream.pipe(response);
+                            }
+                            else if (typeof payload.content === "string" || payload.content instanceof Buffer) {
+                                response.end(payload.content);
+                            }
+                            else if (payload.content && typeof payload.content === "object") {
+                                response.end(JSON.stringify(payload.content));
+                            }
+                            else {
+                                response.end();
+                            }
+                        };
                         _b.label = 1;
                     case 1:
                         _b.trys.push([1, 4, , 6]);
@@ -407,33 +407,7 @@ var HttpServer = /** @class */ (function () {
                         if (!payload) {
                             throw new http_1.HttpError("Not found", http_1.HttpCode.NotFound);
                         }
-                        response.writeHead(payload.redirect ? http_1.HttpCode.Redirect : payload.code || http_1.HttpCode.Ok, __assign(__assign(__assign(__assign(__assign({ "Content-Type": payload.mime || util_2.getMediaMime(payload.filePath) }, (payload.redirect ? { Location: this.constructRedirect(request, route, payload) } : {})), (request.headers["service-worker"] ? { "Service-Worker-Allowed": route.provider.base(route) } : {})), (payload.cache ? { "Cache-Control": "public, max-age=31536000" } : {})), (payload.cookie
-                            ? {
-                                "Set-Cookie": [
-                                    payload.cookie.key + "=" + payload.cookie.value,
-                                    "Path=" + util_1.normalize(payload.cookie.path || "/", true),
-                                    "HttpOnly",
-                                    "SameSite=strict",
-                                ].join(";"),
-                            }
-                            : {})), payload.headers));
-                        if (payload.stream) {
-                            payload.stream.on("error", function (error) {
-                                response.writeHead(error.code === "ENOENT" ? http_1.HttpCode.NotFound : http_1.HttpCode.ServerError);
-                                response.end(error.message);
-                            });
-                            payload.stream.on("close", function () { return response.end(); });
-                            payload.stream.pipe(response);
-                        }
-                        else if (typeof payload.content === "string" || payload.content instanceof Buffer) {
-                            response.end(payload.content);
-                        }
-                        else if (payload.content && typeof payload.content === "object") {
-                            response.end(JSON.stringify(payload.content));
-                        }
-                        else {
-                            response.end();
-                        }
+                        write(payload);
                         return [3 /*break*/, 6];
                     case 4:
                         error_1 = _b.sent();
@@ -446,9 +420,8 @@ var HttpServer = /** @class */ (function () {
                         code = typeof e.code === "number" ? e.code : http_1.HttpCode.ServerError;
                         return [4 /*yield*/, route.provider.getErrorRoot(route, code, code, e.message)];
                     case 5:
-                        content = (_b.sent()).content;
-                        response.writeHead(code);
-                        response.end(content);
+                        payload = _b.sent();
+                        write(__assign({ code: code }, payload));
                         return [3 /*break*/, 6];
                     case 6: return [2 /*return*/];
                 }
@@ -477,9 +450,7 @@ var HttpServer = /** @class */ (function () {
                         return [4 /*yield*/, this.socketProvider.createProxy(socket)];
                     case 1: return [4 /*yield*/, _b.apply(_a, _c.concat([_d.sent(), head]))];
                     case 2:
-                        if (!(_d.sent())) {
-                            throw new http_1.HttpError("Not found", http_1.HttpCode.NotFound);
-                        }
+                        _d.sent();
                         return [3 /*break*/, 4];
                     case 3:
                         error_2 = _d.sent();
@@ -607,7 +578,7 @@ var HttpServer = /** @class */ (function () {
         var redirect = (this.options.cert && !secure ? this.protocol + "://" + request.headers.host + "/" : "") +
             util_1.normalize(route.provider.base(route) + "/" + payload.redirect, true) +
             (Object.keys(query).length > 0 ? "?" + querystring.stringify(query) : "");
-        logger_1.logger.debug("Redirecting", logger_1.field("secure", !!secure), logger_1.field("from", request.url), logger_1.field("to", redirect));
+        logger_1.logger.debug("redirecting", logger_1.field("secure", !!secure), logger_1.field("from", request.url), logger_1.field("to", redirect));
         return redirect;
     };
     /**

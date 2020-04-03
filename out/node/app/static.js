@@ -55,11 +55,24 @@ var __spreadArrays = (this && this.__spreadArrays) || function () {
             r[k] = a[j];
     return r;
 };
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
+var logger_1 = require("@coder/logger");
+var path = __importStar(require("path"));
+var tarFs = __importStar(require("tar-fs"));
+var zlib = __importStar(require("zlib"));
 var http_1 = require("../http");
 /**
- * Static file HTTP provider. Static requests do not require authentication and
- * they only allow access to resources within the application.
+ * Static file HTTP provider. Regular static requests (the path is the request
+ * itself) do not require authentication and they only allow access to resources
+ * within the application. Requests for tars (the path is in a query parameter)
+ * do require permissions and can access any directory.
  */
 var StaticHttpProvider = /** @class */ (function (_super) {
     __extends(StaticHttpProvider, _super);
@@ -73,6 +86,10 @@ var StaticHttpProvider = /** @class */ (function (_super) {
                 switch (_a.label) {
                     case 0:
                         this.ensureMethod(request);
+                        if (typeof route.query.tar === "string") {
+                            this.ensureAuthenticated(request);
+                            return [2 /*return*/, this.getTarredResource(request, route.query.tar)];
+                        }
                         return [4 /*yield*/, this.getReplacedResource(route)];
                     case 1:
                         response = _a.sent();
@@ -105,6 +122,33 @@ var StaticHttpProvider = /** @class */ (function (_super) {
                         return [2 /*return*/, this.replaceTemplates(route, response)];
                     case 3: return [2 /*return*/, this.getResource.apply(this, __spreadArrays([this.rootPath], split))];
                 }
+            });
+        });
+    };
+    /**
+     * Tar up and stream a directory.
+     */
+    StaticHttpProvider.prototype.getTarredResource = function (request) {
+        var parts = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            parts[_i - 1] = arguments[_i];
+        }
+        return __awaiter(this, void 0, void 0, function () {
+            var filePath, stream, headers, compress_1;
+            return __generator(this, function (_a) {
+                filePath = path.join.apply(path, parts);
+                stream = tarFs.pack(filePath);
+                headers = {};
+                if (request.headers["accept-encoding"] && request.headers["accept-encoding"].includes("gzip")) {
+                    logger_1.logger.debug("gzipping tar", logger_1.field("filePath", filePath));
+                    compress_1 = zlib.createGzip();
+                    stream.pipe(compress_1);
+                    stream.on("error", function (error) { return compress_1.destroy(error); });
+                    stream.on("close", function () { return compress_1.end(); });
+                    stream = compress_1;
+                    headers["content-encoding"] = "gzip";
+                }
+                return [2 /*return*/, { stream: stream, filePath: filePath, mime: "application/x-tar", cache: true, headers: headers }];
             });
         });
     };

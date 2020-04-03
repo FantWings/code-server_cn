@@ -20,7 +20,6 @@
 
     <!-- Workarounds/Hacks (remote user data uri) -->
     <meta id="vscode-remote-user-data-uri" data-settings="{{REMOTE_USER_DATA_URI}}" />
-    <meta id="vscode-remote-commit" data-settings="{{COMMIT}}" />
     <meta id="vscode-remote-product-configuration" data-settings="{{PRODUCT_CONFIGURATION}}" />
     <meta id="vscode-remote-nls-configuration" data-settings="{{NLS_CONFIGURATION}}" />
 
@@ -34,7 +33,7 @@
     <!-- PROD_ONLY
     <link data-name="vs/workbench/workbench.web.api" rel="stylesheet" href="{{BASE}}/static/{{COMMIT}}/lib/vscode/out/vs/workbench/workbench.web.api.css">
     END_PROD_ONLY -->
-    <link rel="apple-touch-icon" href="{{BASE}}/static/{{COMMIT}}/src/browser/media/code-server.png" />
+    <link rel="apple-touch-icon" href="{{BASE}}/static/{{COMMIT}}/src/browser/media/pwa-icon-384.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
 
     <!-- Prefetch to avoid waterfall -->
@@ -52,9 +51,7 @@
     const parts = window.location.pathname.replace(/^\//g, "").split("/")
     parts[parts.length - 1] = "{{BASE}}"
     const url = new URL(window.location.origin + "/" + parts.join("/"))
-    const el = document.getElementById("vscode-remote-commit")
-    const commit = el ? el.getAttribute("data-settings") : ""
-    const staticBase = url.href.replace(/\/+$/, "") + "/static/" + commit + "/lib/vscode"
+    const staticBase = url.href.replace(/\/+$/, "") + "/static/{{COMMIT}}/lib/vscode"
     let nlsConfig
     try {
       nlsConfig = JSON.parse(document.getElementById("vscode-remote-nls-configuration").getAttribute("data-settings"))
@@ -86,6 +83,7 @@
         "onigasm-umd": `${staticBase}/node_modules/onigasm-umd/release/main`,
         xterm: `${staticBase}/node_modules/xterm/lib/xterm.js`,
         "xterm-addon-search": `${staticBase}/node_modules/xterm-addon-search/lib/xterm-addon-search.js`,
+        "xterm-addon-unicode11": `${staticBase}/node_modules/xterm-addon-unicode11/lib/xterm-addon-unicode11.js`,
         "xterm-addon-web-links": `${staticBase}/node_modules/xterm-addon-web-links/lib/xterm-addon-web-links.js`,
         "xterm-addon-webgl": `${staticBase}/node_modules/xterm-addon-webgl/lib/xterm-addon-webgl.js`,
         "semver-umd": `${staticBase}/node_modules/semver-umd/lib/semver-umd.js`,
@@ -93,13 +91,20 @@
       "vs/nls": nlsConfig,
     }
   </script>
-  <script src="{{BASE}}/static/{{COMMIT}}/dist/register.js"></script>
-  <script src="{{BASE}}/static/{{COMMIT}}/lib/vscode/out/vs/loader.js"></script>
+  <script data-cfasync="false" src="{{BASE}}/static/{{COMMIT}}/dist/register.js"></script>
+  <script data-cfasync="false" src="{{BASE}}/static/{{COMMIT}}/lib/vscode/out/vs/loader.js"></script>
   <!-- PROD_ONLY
-  <script src="{{BASE}}/static/{{COMMIT}}/lib/vscode/out/vs/workbench/workbench.web.api.nls.js"></script>
-  <script src="{{BASE}}/static/{{COMMIT}}/lib/vscode/out/vs/workbench/workbench.web.api.js"></script>
+  <script data-cfasync="false" src="{{BASE}}/static/{{COMMIT}}/lib/vscode/out/vs/workbench/workbench.web.api.nls.js"></script>
+  <script data-cfasync="false" src="{{BASE}}/static/{{COMMIT}}/lib/vscode/out/vs/workbench/workbench.web.api.js"></script>
   END_PROD_ONLY -->
   <script>
     require(["vs/code/browser/workbench/workbench"], function() {})
+  </script>
+  <script>
+    try {
+      document.body.style.background = JSON.parse(localStorage.getItem("colorThemeData")).colorMap["editor.background"]
+    } catch (error) {
+      // Oh well.
+    }
   </script>
 </html>

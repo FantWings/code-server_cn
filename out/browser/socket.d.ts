@@ -5,7 +5,7 @@ export declare const decode: (buffer: string | ArrayBuffer) => string;
  * disconnected will throw an error.
  */
 export declare class ReconnectingSocket {
-    private customPath?;
+    private path;
     readonly id: string;
     protected readonly _onMessage: Emitter<string | ArrayBuffer>;
     readonly onMessage: import("../common/emitter").Event<string | ArrayBuffer>;
@@ -27,7 +27,7 @@ export declare class ReconnectingSocket {
     private resetRetryTimeout?;
     private readonly resetRetryDelay;
     private _binaryType;
-    constructor(customPath?: string | undefined, id?: string);
+    constructor(path: string, id?: string);
     set binaryType(b: typeof WebSocket.prototype.binaryType);
     /**
      * Permanently close the connection. Will not attempt to reconnect. Will

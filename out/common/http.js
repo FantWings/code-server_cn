@@ -37,10 +37,9 @@ exports.HttpError = HttpError;
 var ApiEndpoint;
 (function (ApiEndpoint) {
     ApiEndpoint["applications"] = "/applications";
+    ApiEndpoint["process"] = "/process";
     ApiEndpoint["recent"] = "/recent";
     ApiEndpoint["run"] = "/run";
-    ApiEndpoint["running"] = "/running";
-    ApiEndpoint["session"] = "/session";
     ApiEndpoint["status"] = "/status";
 })(ApiEndpoint = exports.ApiEndpoint || (exports.ApiEndpoint = {}));
 //# sourceMappingURL=http.js.map

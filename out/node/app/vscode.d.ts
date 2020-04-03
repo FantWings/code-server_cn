@@ -13,7 +13,7 @@ export declare class VscodeHttpProvider extends HttpProvider {
     dispose(): Promise<void>;
     private initialize;
     private fork;
-    handleWebSocket(route: Route, request: http.IncomingMessage, socket: net.Socket): Promise<true>;
+    handleWebSocket(route: Route, request: http.IncomingMessage, socket: net.Socket): Promise<void>;
     private send;
     handleRequest(route: Route, request: http.IncomingMessage): Promise<HttpResponse>;
     private getRoot;

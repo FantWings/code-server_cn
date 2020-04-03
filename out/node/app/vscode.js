@@ -178,7 +178,7 @@ var VscodeHttpProvider = /** @class */ (function (_super) {
                     case 1:
                         vscode = _a.sent();
                         this.send({ type: "socket", query: route.query }, vscode, socket);
-                        return [2 /*return*/, true];
+                        return [2 /*return*/];
                 }
             });
         });
@@ -227,11 +227,6 @@ var VscodeHttpProvider = /** @class */ (function (_super) {
                             case "/vscode-remote-resource":
                                 if (typeof route.query.path === "string") {
                                     return [2 /*return*/, this.getResource(route.query.path)];
-                                }
-                                break;
-                            case "/tar":
-                                if (typeof route.query.path === "string") {
-                                    return [2 /*return*/, this.getTarredResource(request, route.query.path)];
                                 }
                                 break;
                             case "/webview":
@@ -288,7 +283,11 @@ var VscodeHttpProvider = /** @class */ (function (_super) {
                             .replace("\"{{PRODUCT_CONFIGURATION}}\"", "'" + JSON.stringify(options.productConfiguration) + "'")
                             .replace("\"{{WORKBENCH_WEB_CONFIGURATION}}\"", "'" + JSON.stringify(options.workbenchWebConfiguration) + "'")
                             .replace("\"{{NLS_CONFIGURATION}}\"", "'" + JSON.stringify(options.nlsConfiguration) + "'");
-                        return [2 /*return*/, this.replaceTemplates(route, response)];
+                        return [2 /*return*/, this.replaceTemplates(route, response, {
+                                base: this.base(route),
+                                commit: this.options.commit,
+                                disableTelemetry: !!this.args["disable-telemetry"],
+                            })];
                 }
             });
         });

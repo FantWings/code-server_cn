@@ -239,7 +239,7 @@ var UpdateHttpProvider = /** @class */ (function (_super) {
                         _b.sent();
                         _b.label = 7;
                     case 7:
-                        logger_1.logger.debug("Got latest version", logger_1.field("latest", update.version));
+                        logger_1.logger.debug("got latest version", logger_1.field("latest", update.version));
                         return [2 /*return*/, update];
                     case 8:
                         error_1 = _b.sent();
@@ -265,7 +265,7 @@ var UpdateHttpProvider = /** @class */ (function (_super) {
      */
     UpdateHttpProvider.prototype.isLatestVersion = function (latest) {
         var version = this.currentVersion;
-        logger_1.logger.debug("Comparing versions", logger_1.field("current", version), logger_1.field("latest", latest.version));
+        logger_1.logger.debug("comparing versions", logger_1.field("current", version), logger_1.field("latest", latest.version));
         try {
             return latest.version === version || semver.lt(latest.version, version);
         }
@@ -515,7 +515,7 @@ var UpdateHttpProvider = /** @class */ (function (_super) {
                         var request = function (uri) {
                             logger_1.logger.debug("Making request", logger_1.field("uri", uri));
                             var httpx = uri.startsWith("https") ? https : http;
-                            httpx.get(uri, { headers: { "User-Agent": "code-server" } }, function (response) {
+                            var client = httpx.get(uri, { headers: { "User-Agent": "code-server" } }, function (response) {
                                 if (response.statusCode &&
                                     response.statusCode >= 300 &&
                                     response.statusCode < 400 &&
@@ -532,6 +532,7 @@ var UpdateHttpProvider = /** @class */ (function (_super) {
                                 }
                                 resolve(response);
                             });
+                            client.on("error", reject);
                         };
                         request(uri);
                     })];

@@ -4,6 +4,7 @@ export declare const generateCertificate: () => Promise<{
     cert: string;
     certKey: string;
 }>;
+export declare const generateSshHostKey: () => Promise<string>;
 export declare const generatePassword: (length?: number) => Promise<string>;
 export declare const hash: (str: string) => string;
 export declare const getMediaMime: (filePath?: string | undefined) => string;

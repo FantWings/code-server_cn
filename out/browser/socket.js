@@ -48,10 +48,10 @@ exports.decode = function (buffer) {
  * disconnected will throw an error.
  */
 var ReconnectingSocket = /** @class */ (function () {
-    function ReconnectingSocket(customPath, id) {
+    function ReconnectingSocket(path, id) {
         var _this = this;
         if (id === void 0) { id = util_1.generateUuid(4); }
-        this.customPath = customPath;
+        this.path = path;
         this.id = id;
         this._onMessage = new emitter_1.Emitter();
         this.onMessage = this._onMessage.event;
@@ -186,8 +186,8 @@ var ReconnectingSocket = /** @class */ (function () {
                                 _this.logger.info("retrying in " + _this.retryDelay + "ms...");
                             }
                             setTimeout(function () {
-                                _this.logger.info("connecting...");
-                                var socket = new WebSocket((location.protocol === "https:" ? "wss" : "ws") + "://" + location.host + (_this.customPath || location.pathname) + (location.search ? "?" + location.search : ""));
+                                _this.logger.info("connecting...", logger_1.field("path", _this.path));
+                                var socket = new WebSocket(_this.path);
                                 var reject = function () {
                                     _reject(new Error("socket closed"));
                                 };

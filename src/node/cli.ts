@@ -31,10 +31,13 @@ export interface Args extends VsArgs {
   readonly open?: boolean
   readonly port?: number
   readonly socket?: string
+  readonly "ssh-host-key"?: string
+  readonly "disable-ssh"?: boolean
   readonly version?: boolean
   readonly force?: boolean
   readonly "list-extensions"?: boolean
   readonly "install-extension"?: string[]
+  readonly "show-versions"?: boolean
   readonly "uninstall-extension"?: string[]
   readonly locale?: string
   readonly _: string[]
@@ -95,15 +98,19 @@ const options: Options<Required<Args>> = {
   version: { type: "boolean", short: "v", description: "Display version information." },
   _: { type: "string[]" },
 
+  "disable-ssh": { type: "boolean", description: "Disable the SSH server." },
+  "ssh-host-key": { type: "string", path: true, description: "SSH server host key." },
+
   "user-data-dir": { type: "string", path: true, description: "Path to the user data directory." },
   "extensions-dir": { type: "string", path: true, description: "Path to the extensions directory." },
   "builtin-extensions-dir": { type: "string", path: true },
   "extra-extensions-dir": { type: "string[]", path: true },
   "extra-builtin-extensions-dir": { type: "string[]", path: true },
-  "list-extensions": { type: "boolean" },
-  force: { type: "boolean" },
-  "install-extension": { type: "string[]", description: "Install or update an extension by id or vsix." },
-  "uninstall-extension": { type: "string[]" },
+  "list-extensions": { type: "boolean", description: "List installed VS Code extensions." },
+  force: { type: "boolean", description: "Avoid prompts when installing VS Code extensions." },
+  "install-extension": { type: "string[]", description: "Install or update a VS Code extension by id or vsix." },
+  "uninstall-extension": { type: "string[]", description: "Uninstall a VS Code extension by id." },
+  "show-versions": { type: "boolean", description: "Show VS Code extension versions." },
 
   locale: { type: "string" },
   log: { type: LogLevel },

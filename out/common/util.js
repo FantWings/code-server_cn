@@ -37,14 +37,12 @@ exports.normalize = function (url, keepTrailing) {
     return url.replace(/\/\/+/g, "/").replace(/\/+$/, keepTrailing ? "/" : "");
 };
 /**
- * Get options embedded in the HTML from the server.
+ * Get options embedded in the HTML or query params.
  */
 exports.getOptions = function () {
-    if (typeof document === "undefined") {
-        return {};
-    }
-    var el = document.getElementById("coder-options");
+    var options;
     try {
+        var el = document.getElementById("coder-options");
         if (!el) {
             throw new Error("no options element");
         }
@@ -52,18 +50,26 @@ exports.getOptions = function () {
         if (!value) {
             throw new Error("no options value");
         }
-        var options = JSON.parse(value);
-        if (typeof options.logLevel !== "undefined") {
-            logger_1.logger.level = options.logLevel;
-        }
-        var parts = window.location.pathname.replace(/^\//g, "").split("/");
-        parts[parts.length - 1] = options.base;
-        var url = new URL(window.location.origin + "/" + parts.join("/"));
-        return __assign(__assign({}, options), { base: exports.normalize(url.pathname, true) });
+        options = JSON.parse(value);
     }
     catch (error) {
-        logger_1.logger.warn(error.message);
-        return {};
+        options = {};
     }
+    var params = new URLSearchParams(location.search);
+    var queryOpts = params.get("options");
+    if (queryOpts) {
+        options = __assign(__assign({}, options), JSON.parse(queryOpts));
+    }
+    if (typeof options.logLevel !== "undefined") {
+        logger_1.logger.level = options.logLevel;
+    }
+    if (options.base) {
+        var parts = location.pathname.replace(/^\//g, "").split("/");
+        parts[parts.length - 1] = options.base;
+        var url = new URL(location.origin + "/" + parts.join("/"));
+        options.base = exports.normalize(url.pathname, true);
+    }
+    logger_1.logger.debug("got options", logger_1.field("options", options));
+    return options;
 };
 //# sourceMappingURL=util.js.map

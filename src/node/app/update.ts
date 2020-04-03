@@ -140,7 +140,7 @@ export class UpdateHttpProvider extends HttpProvider {
         update = { checked: now, version: data.name }
         await this.settings.write({ update })
       }
-      logger.debug("Got latest version", field("latest", update.version))
+      logger.debug("got latest version", field("latest", update.version))
       return update
     } catch (error) {
       logger.error("Failed to get latest version", field("error", error.message))
@@ -160,7 +160,7 @@ export class UpdateHttpProvider extends HttpProvider {
    */
   public isLatestVersion(latest: Update): boolean {
     const version = this.currentVersion
-    logger.debug("Comparing versions", field("current", version), field("latest", latest.version))
+    logger.debug("comparing versions", field("current", version), field("latest", latest.version))
     try {
       return latest.version === version || semver.lt(latest.version, version)
     } catch (error) {
@@ -341,7 +341,7 @@ export class UpdateHttpProvider extends HttpProvider {
       const request = (uri: string): void => {
         logger.debug("Making request", field("uri", uri))
         const httpx = uri.startsWith("https") ? https : http
-        httpx.get(uri, { headers: { "User-Agent": "code-server" } }, (response) => {
+        const client = httpx.get(uri, { headers: { "User-Agent": "code-server" } }, (response) => {
           if (
             response.statusCode &&
             response.statusCode >= 300 &&
@@ -362,6 +362,7 @@ export class UpdateHttpProvider extends HttpProvider {
 
           resolve(response)
         })
+        client.on("error", reject)
       }
       request(uri)
     })

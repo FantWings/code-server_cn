@@ -14,11 +14,11 @@
   },
   "main": "./dist/extension",
   "categories": ["Other"],
-  "activationEvents": ["onWebviewEditor:imagePreview.previewEditor", "onCommand:imagePreview.zoomIn", "onCommand:imagePreview.zoomOut"],
+  "activationEvents": ["onCustomEditor:imagePreview.previewEditor", "onCommand:imagePreview.zoomIn", "onCommand:imagePreview.zoomOut"],
   "contributes": {
-    "webviewEditors": [{
+    "customEditors": [{
       "viewType": "imagePreview.previewEditor",
-      "displayName": "%webviewEditors.displayName%",
+      "displayName": "%customEditors.displayName%",
       "priority": "builtin",
       "selector": [{
         "filenamePattern": "*.{jpg,jpe,jpeg,png,bmp,gif,ico,webp}"

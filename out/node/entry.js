@@ -58,7 +58,6 @@ var logger_1 = require("@coder/logger");
 var cp = __importStar(require("child_process"));
 var path = __importStar(require("path"));
 var api_1 = require("./app/api");
-var app_1 = require("./app/app");
 var dashboard_1 = require("./app/dashboard");
 var login_1 = require("./app/login");
 var static_1 = require("./app/static");
@@ -66,12 +65,28 @@ var update_1 = require("./app/update");
 var vscode_1 = require("./app/vscode");
 var cli_1 = require("./cli");
 var http_1 = require("./http");
+var server_1 = require("./ssh/server");
 var util_1 = require("./util");
 var wrapper_1 = require("./wrapper");
+process.on("uncaughtException", function (error) {
+    logger_1.logger.error("Uncaught exception: " + error.message);
+    if (typeof error.stack !== "undefined") {
+        logger_1.logger.error(error.stack);
+    }
+});
+var pkg = {};
+try {
+    pkg = require("../../package.json");
+}
+catch (error) {
+    logger_1.logger.warn(error.message);
+}
+var version = pkg.version || "development";
+var commit = pkg.commit || "development";
 var main = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var auth, originalPassword, _a, _b, commit, options, _c, cert, certKey, httpServer, vscode, api, update, serverAddress, openAddress;
-    return __generator(this, function (_d) {
-        switch (_d.label) {
+    var auth, originalPassword, _a, _b, options, _c, cert, certKey, _d, error_1, httpServer, vscode, api, update, serverAddress, sshPort, sshProvider, error_2, openAddress;
+    return __generator(this, function (_e) {
+        switch (_e.label) {
             case 0:
                 auth = args.auth || http_1.AuthType.Password;
                 _a = auth === http_1.AuthType.Password;
@@ -80,24 +95,19 @@ var main = function (args) { return __awaiter(void 0, void 0, void 0, function (
                 if (_b) return [3 /*break*/, 2];
                 return [4 /*yield*/, util_1.generatePassword()];
             case 1:
-                _b = (_d.sent());
-                _d.label = 2;
+                _b = (_e.sent());
+                _e.label = 2;
             case 2:
                 _a = (_b);
-                _d.label = 3;
+                _e.label = 3;
             case 3:
                 originalPassword = _a;
-                try {
-                    commit = require("../../package.json").commit;
-                }
-                catch (error) {
-                    logger_1.logger.warn(error.message);
-                }
                 options = {
                     auth: auth,
                     cert: args.cert ? args.cert.value : undefined,
                     certKey: args["cert-key"],
-                    commit: commit || "development",
+                    sshHostKey: args["ssh-host-key"],
+                    commit: commit,
                     host: args.host || (args.auth === http_1.AuthType.Password && typeof args.cert !== "undefined" ? "0.0.0.0" : "localhost"),
                     password: originalPassword ? util_1.hash(originalPassword) : undefined,
                     port: typeof args.port !== "undefined" ? args.port : process.env.PORT ? parseInt(process.env.PORT, 10) : 8080,
@@ -106,7 +116,7 @@ var main = function (args) { return __awaiter(void 0, void 0, void 0, function (
                 if (!(!options.cert && args.cert)) return [3 /*break*/, 5];
                 return [4 /*yield*/, util_1.generateCertificate()];
             case 4:
-                _c = _d.sent(), cert = _c.cert, certKey = _c.certKey;
+                _c = _e.sent(), cert = _c.cert, certKey = _c.certKey;
                 options.cert = cert;
                 options.certKey = certKey;
                 return [3 /*break*/, 6];
@@ -114,22 +124,39 @@ var main = function (args) { return __awaiter(void 0, void 0, void 0, function (
                 if (args.cert && !args["cert-key"]) {
                     throw new Error("--cert-key is missing");
                 }
-                _d.label = 6;
+                _e.label = 6;
             case 6:
+                if (!!args["disable-ssh"]) return [3 /*break*/, 11];
+                if (!(!options.sshHostKey && typeof options.sshHostKey !== "undefined")) return [3 /*break*/, 7];
+                throw new Error("--ssh-host-key cannot be blank");
+            case 7:
+                if (!!options.sshHostKey) return [3 /*break*/, 11];
+                _e.label = 8;
+            case 8:
+                _e.trys.push([8, 10, , 11]);
+                _d = options;
+                return [4 /*yield*/, util_1.generateSshHostKey()];
+            case 9:
+                _d.sshHostKey = _e.sent();
+                return [3 /*break*/, 11];
+            case 10:
+                error_1 = _e.sent();
+                logger_1.logger.error("Unable to start SSH server", logger_1.field("error", error_1.message));
+                return [3 /*break*/, 11];
+            case 11:
                 httpServer = new http_1.HttpServer(options);
                 vscode = httpServer.registerHttpProvider("/", vscode_1.VscodeHttpProvider, args);
                 api = httpServer.registerHttpProvider("/api", api_1.ApiHttpProvider, httpServer, vscode, args["user-data-dir"]);
                 update = httpServer.registerHttpProvider("/update", update_1.UpdateHttpProvider, !args["disable-updates"]);
-                httpServer.registerHttpProvider("/app", app_1.AppHttpProvider, api);
                 httpServer.registerHttpProvider("/login", login_1.LoginHttpProvider);
                 httpServer.registerHttpProvider("/static", static_1.StaticHttpProvider);
                 httpServer.registerHttpProvider("/dashboard", dashboard_1.DashboardHttpProvider, api, update);
                 wrapper_1.ipcMain().onDispose(function () { return httpServer.dispose(); });
-                logger_1.logger.info("code-server " + require("../../package.json").version);
+                logger_1.logger.info("code-server " + version + " " + commit);
                 return [4 /*yield*/, httpServer.listen()];
-            case 7:
-                serverAddress = _d.sent();
-                logger_1.logger.info("Server listening on " + serverAddress);
+            case 12:
+                serverAddress = _e.sent();
+                logger_1.logger.info("HTTP server listening on " + serverAddress);
                 if (auth === http_1.AuthType.Password && !process.env.PASSWORD) {
                     logger_1.logger.info("  - Password is " + originalPassword);
                     logger_1.logger.info("    - To use your own password, set the PASSWORD environment variable");
@@ -151,15 +178,35 @@ var main = function (args) { return __awaiter(void 0, void 0, void 0, function (
                 else {
                     logger_1.logger.info("  - Not serving HTTPS");
                 }
-                logger_1.logger.info("  - Automatic updates are " + (update.enabled ? "enabled" : "disabled"));
-                if (!(serverAddress && !options.socket && args.open)) return [3 /*break*/, 9];
+                logger_1.logger.info("Automatic updates are " + (update.enabled ? "enabled" : "disabled"));
+                if (!(!args["disable-ssh"] && options.sshHostKey)) return [3 /*break*/, 16];
+                sshProvider = httpServer.registerHttpProvider("/ssh", server_1.SshProvider, options.sshHostKey);
+                _e.label = 13;
+            case 13:
+                _e.trys.push([13, 15, , 16]);
+                return [4 /*yield*/, sshProvider.listen()];
+            case 14:
+                sshPort = _e.sent();
+                return [3 /*break*/, 16];
+            case 15:
+                error_2 = _e.sent();
+                logger_1.logger.warn("SSH server: " + error_2.message);
+                return [3 /*break*/, 16];
+            case 16:
+                if (typeof sshPort !== "undefined") {
+                    logger_1.logger.info("SSH server listening on localhost:" + sshPort);
+                }
+                else {
+                    logger_1.logger.info("SSH server disabled");
+                }
+                if (!(serverAddress && !options.socket && args.open)) return [3 /*break*/, 18];
                 openAddress = serverAddress.replace(/:\/\/0.0.0.0/, "://localhost");
                 return [4 /*yield*/, util_1.open(openAddress).catch(console.error)];
-            case 8:
-                _d.sent();
-                logger_1.logger.info("  - Opened " + openAddress);
-                _d.label = 9;
-            case 9: return [2 /*return*/];
+            case 17:
+                _e.sent();
+                logger_1.logger.info("Opened " + openAddress);
+                _e.label = 18;
+            case 18: return [2 /*return*/];
         }
     });
 }); };
@@ -174,7 +221,7 @@ var tryParse = function () {
 };
 var args = tryParse();
 if (args.help) {
-    console.log("code-server", require("../../package.json").version);
+    console.log("code-server", version, commit);
     console.log("");
     console.log("Usage: code-server [options] [path]");
     console.log("");
@@ -184,15 +231,15 @@ if (args.help) {
     });
 }
 else if (args.version) {
-    var version = require("../../package.json").version;
     if (args.json) {
         console.log({
             codeServer: version,
+            commit: commit,
             vscode: require("../../lib/vscode/package.json").version,
         });
     }
     else {
-        console.log(version);
+        console.log(version, commit);
     }
     process.exit(0);
 }

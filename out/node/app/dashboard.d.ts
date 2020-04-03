@@ -12,8 +12,7 @@ export declare class DashboardHttpProvider extends HttpProvider {
     constructor(options: HttpProviderOptions, api: ApiHttpProvider, update: UpdateHttpProvider);
     handleRequest(route: Route, request: http.IncomingMessage): Promise<HttpResponse>;
     getRoot(route: Route): Promise<HttpResponse>;
-    private getRecentProjectRows;
-    private getRecentProjectRow;
+    getAppRoot(route: Route): Promise<HttpResponse>;
     private getAppRows;
     private getAppRow;
     private getUpdate;

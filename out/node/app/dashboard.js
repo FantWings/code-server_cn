@@ -58,8 +58,8 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var querystring = __importStar(require("querystring"));
 var http_1 = require("../../common/http");
+var util_1 = require("../../common/util");
 var http_2 = require("../http");
-var bin_1 = require("./bin");
 /**
  * Dashboard HTTP provider.
  */
@@ -73,7 +73,7 @@ var DashboardHttpProvider = /** @class */ (function (_super) {
     }
     DashboardHttpProvider.prototype.handleRequest = function (route, request) {
         return __awaiter(this, void 0, void 0, function () {
-            var _a, data, p;
+            var _a, data, app;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
@@ -82,7 +82,8 @@ var DashboardHttpProvider = /** @class */ (function (_super) {
                         }
                         _a = route.base;
                         switch (_a) {
-                            case "/delete": return [3 /*break*/, 1];
+                            case "/spawn": return [3 /*break*/, 1];
+                            case "/app": return [3 /*break*/, 3];
                             case "/": return [3 /*break*/, 3];
                         }
                         return [3 /*break*/, 4];
@@ -92,8 +93,14 @@ var DashboardHttpProvider = /** @class */ (function (_super) {
                         return [4 /*yield*/, this.getData(request)];
                     case 2:
                         data = _b.sent();
-                        p = data ? querystring.parse(data) : {};
-                        this.api.deleteSession(p.sessionId);
+                        app = data ? querystring.parse(data) : {};
+                        if (app.path) {
+                            return [2 /*return*/, { redirect: Array.isArray(app.path) ? app.path[0] : app.path }];
+                        }
+                        if (!app.exec) {
+                            throw new Error("No exec was provided");
+                        }
+                        this.api.spawnProcess(Array.isArray(app.exec) ? app.exec[0] : app.exec);
                         return [2 /*return*/, { redirect: this.options.base }];
                     case 3:
                         {
@@ -101,7 +108,7 @@ var DashboardHttpProvider = /** @class */ (function (_super) {
                             if (!this.authenticated(request)) {
                                 return [2 /*return*/, { redirect: "/login", query: { to: this.options.base } }];
                             }
-                            return [2 /*return*/, this.getRoot(route)];
+                            return [2 /*return*/, route.base === "/" ? this.getRoot(route) : this.getAppRoot(route)];
                         }
                         _b.label = 4;
                     case 4: throw new http_1.HttpError("Not found", http_1.HttpCode.NotFound);
@@ -111,35 +118,23 @@ var DashboardHttpProvider = /** @class */ (function (_super) {
     };
     DashboardHttpProvider.prototype.getRoot = function (route) {
         return __awaiter(this, void 0, void 0, function () {
-            var base, apps, response, _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p;
-            return __generator(this, function (_q) {
-                switch (_q.label) {
+            var base, apps, response, _a, _b, _c, _d;
+            return __generator(this, function (_e) {
+                switch (_e.label) {
                     case 0:
                         base = this.base(route);
                         return [4 /*yield*/, this.api.installedApplications()];
                     case 1:
-                        apps = _q.sent();
+                        apps = _e.sent();
                         return [4 /*yield*/, this.getUtf8Resource(this.rootPath, "src/browser/pages/home.html")];
                     case 2:
-                        response = _q.sent();
+                        response = _e.sent();
                         _a = response;
-                        _e = (_d = response.content).replace;
-                        _f = [/{{UPDATE:NAME}}/];
+                        _c = (_b = response.content).replace;
+                        _d = [/{{UPDATE:NAME}}/];
                         return [4 /*yield*/, this.getUpdate(base)];
                     case 3:
-                        _g = (_c = _e.apply(_d, _f.concat([_q.sent()]))).replace;
-                        _h = [/{{APP_LIST:RUNNING}}/];
-                        _j = this.getAppRows;
-                        _k = [base];
-                        return [4 /*yield*/, this.api.running()];
-                    case 4:
-                        _l = (_b = _g.apply(_c, _h.concat([_j.apply(this, _k.concat([(_q.sent()).applications]))]))).replace;
-                        _m = [/{{APP_LIST:RECENT_PROJECTS}}/];
-                        _o = this.getRecentProjectRows;
-                        _p = [base];
-                        return [4 /*yield*/, this.api.recent()];
-                    case 5:
-                        _a.content = _l.apply(_b, _m.concat([_o.apply(this, _p.concat([_q.sent()]))]))
+                        _a.content = _c.apply(_b, _d.concat([_e.sent()]))
                             .replace(/{{APP_LIST:EDITORS}}/, this.getAppRows(base, apps.filter(function (app) { return app.categories && app.categories.includes("Editor"); })))
                             .replace(/{{APP_LIST:OTHER}}/, this.getAppRows(base, apps.filter(function (app) { return !app.categories || !app.categories.includes("Editor"); })));
                         return [2 /*return*/, this.replaceTemplates(route, response)];
@@ -147,28 +142,29 @@ var DashboardHttpProvider = /** @class */ (function (_super) {
             });
         });
     };
-    DashboardHttpProvider.prototype.getRecentProjectRows = function (base, recents) {
-        var _this = this;
-        return recents.paths.length > 0 || recents.workspaces.length > 0
-            ? recents.paths.map(function (recent) { return _this.getRecentProjectRow(base, recent); }).join("\n") +
-                recents.workspaces.map(function (recent) { return _this.getRecentProjectRow(base, recent, true); }).join("\n")
-            : "<div class=\"none\">No recent directories or workspaces.</div>";
-    };
-    DashboardHttpProvider.prototype.getRecentProjectRow = function (base, recent, workspace) {
-        return "<div class=\"block-row\">\n      <a class=\"item -row -link\" href=\"" + base + bin_1.Vscode.path + "?" + (workspace ? "workspace" : "folder") + "=" + recent + "\">\n        <div class=\"name\">" + recent + (workspace ? " (workspace)" : "") + "</div>\n      </a>\n    </div>";
+    DashboardHttpProvider.prototype.getAppRoot = function (route) {
+        return __awaiter(this, void 0, void 0, function () {
+            var response;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.getUtf8Resource(this.rootPath, "src/browser/pages/app.html")];
+                    case 1:
+                        response = _a.sent();
+                        return [2 /*return*/, this.replaceTemplates(route, response)];
+                }
+            });
+        });
     };
     DashboardHttpProvider.prototype.getAppRows = function (base, apps) {
         var _this = this;
         return apps.length > 0
             ? apps.map(function (app) { return _this.getAppRow(base, app); }).join("\n")
-            : "<div class=\"none\">No applications are currently running.</div>";
+            : "<div class=\"none\">No applications found.</div>";
     };
     DashboardHttpProvider.prototype.getAppRow = function (base, app) {
-        return "<div class=\"block-row\">\n      <a class=\"item -row -link\" href=\"" + base + app.path + "\">\n        " + (app.icon
+        return "<form class=\"block-row" + (app.exec ? " -x11" : "") + "\" method=\"post\" action=\"" + util_1.normalize("" + base + this.options.base + "/spawn") + "\">\n      <button class=\"item -row -link\">\n        <input type=\"hidden\" name=\"path\" value=\"" + (app.path || "") + "\">\n        <input type=\"hidden\" name=\"exec\" value=\"" + (app.exec || "") + "\">\n        " + (app.icon
             ? "<img class=\"icon\" src=\"data:image/png;base64," + app.icon + "\"></img>"
-            : "<div class=\"icon -missing\"></div>") + "\n        <div class=\"name\">" + app.name + "</div>\n      </a>\n      " + (app.sessionId
-            ? "<form class=\"kill-form\" action=\"" + base + this.options.base + "/delete\" method=\"POST\">\n               <input type=\"hidden\" name=\"sessionId\" value=\"" + app.sessionId + "\">\n               <button class=\"kill -button\" type=\"submit\">Kill</button>\n             </form>"
-            : "") + "\n    </div>";
+            : "<span class=\"icon -missing\"></span>") + "\n        <span class=\"name\">" + app.name + "</span>\n      </button>\n    </form>";
     };
     DashboardHttpProvider.prototype.getUpdate = function (base) {
         return __awaiter(this, void 0, void 0, function () {

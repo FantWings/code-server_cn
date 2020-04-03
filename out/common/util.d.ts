@@ -2,7 +2,7 @@ export interface Options {
     base: string;
     commit: string;
     logLevel: number;
-    sessionId?: string;
+    pid?: number;
 }
 /**
  * Split a string up to the delimiter. If the delimiter doesn't exist the first
@@ -16,6 +16,6 @@ export declare const generateUuid: (length?: number) => string;
  */
 export declare const normalize: (url: string, keepTrailing?: boolean) => string;
 /**
- * Get options embedded in the HTML from the server.
+ * Get options embedded in the HTML or query params.
  */
 export declare const getOptions: <T extends Options>() => T;

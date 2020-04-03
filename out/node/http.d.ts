@@ -116,11 +116,11 @@ export declare abstract class HttpProvider {
     /**
      * Handle web sockets on the registered endpoint.
      */
-    handleWebSocket(_route: Route, _request: http.IncomingMessage, _socket: net.Socket, _head: Buffer): Promise<true | undefined>;
+    handleWebSocket(_route: Route, _request: http.IncomingMessage, _socket: net.Socket, _head: Buffer): Promise<void>;
     /**
      * Handle requests to the registered endpoint.
      */
-    abstract handleRequest(route: Route, request: http.IncomingMessage): Promise<HttpResponse | undefined>;
+    abstract handleRequest(route: Route, request: http.IncomingMessage): Promise<HttpResponse>;
     /**
      * Get the base relative to the provided route. For each slash we need to go
      * up a directory. For example:
@@ -139,6 +139,7 @@ export declare abstract class HttpProvider {
      * Replace common templates strings.
      */
     protected replaceTemplates(route: Route, response: HttpStringFileResponse, sessionId?: string): HttpStringFileResponse;
+    protected replaceTemplates<T extends object>(route: Route, response: HttpStringFileResponse, options: T): HttpStringFileResponse;
     protected get isDev(): boolean;
     /**
      * Get a file resource.
@@ -149,10 +150,6 @@ export declare abstract class HttpProvider {
      * Get a file resource as a string.
      */
     protected getUtf8Resource(...parts: string[]): Promise<HttpStringFileResponse>;
-    /**
-     * Tar up and stream a directory.
-     */
-    protected getTarredResource(request: http.IncomingMessage, ...parts: string[]): Promise<HttpResponse>;
     /**
      * Helper to error on invalid methods (default GET).
      */

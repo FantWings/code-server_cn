@@ -23,7 +23,10 @@ WORKDIR /home/coder
 RUN sudo locale-gen zh_CN.UTF-8 && \
 	sudo locale-gen en_US.UTF-8 && \
 	sudo localedef -i zh_CN -f UTF-8 zh_CN.UTF-8
-ENV SHELL=/bin/bash
+
+# Init ZSH
+RUN git clone https://github.com/robbyrussell/oh-my-zsh.git ~/.oh-my-zsh && cp ./config/zshrc ~/.zshrc
+ENV SHELL=/bin/zsh
 
 #Make USER Home Dir
 ENV HOME_DIR "/home/coder"
