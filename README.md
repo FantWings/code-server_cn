@@ -10,7 +10,7 @@
   - 中文UTF-8环境支持
   - 基础编译套件（software-properties-common build-essential）
   - 基础工具（bsdtar curl sudo wget git vim locales）
-  - Python3 + Pip
+  - Python3 + Pip3
   - NodeJS
   - JAVA-JDK-11
 - **VSCODE 预装扩展清单（不需要可卸载，需要可额外安装，可随时更新不丢失）：**
