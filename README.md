@@ -1,9 +1,11 @@
 # code-server 中文版
 
-本页面由小翼个人进行手动汉化，内容链接均来自原作者,如需访问原作者，[点击这里](https://github.com/cdr/code-server)。
+本页面由小翼个人进行手动汉化，内容链接均来自原作者,如需访问原作者，[点击这里](https://github.com/cdr/code-server)，**如有镜像特殊需求或问题，可[前往此处](https://github.com/fantwings/code-server_cn/issues)提交issue**，**[Demo站点](https://code.furry.top/demo)** （仅用于Demo演示，请不要存放重要数据，密码为：furry.top）
 
-容器已集成以下模块：  
-- 母版：Debian10
+**最后维护日期：2020年4月7日17:27:24**
+
+## 容器已集成以下模块：  
+- **母版：Debian10**
   - 阿里云APT镜像
   - 中文UTF-8环境支持
   - 基础编译套件（software-properties-common build-essential）
@@ -11,23 +13,28 @@
   - Python3 + Pip
   - NodeJS
   - JAVA-JDK-11
-- VSCODE 预装扩展清单（不需要可卸载，需要可额外安装，可随时更新不丢失）
-  - 语言扩展相关
+- **VSCODE 预装扩展清单（不需要可卸载，需要可额外安装，可随时更新不丢失）：**
+  - **语言扩展相关**
     - Python
     - JAVA
     - GO
-  - 功能扩展
+  - **功能扩展**
     - LiveServer（实时网页预览（需要额外映射监听端口号5500））
     - beautify（代码格式优化）
     - code-spell-checker（单词语法检查器）
     - gitblame（Git历史查询）
-  - 美化扩展
+  - **美化扩展**
     - vscode-icons（图标包）
     - indent-rainbow（彩色TAB间隔）
     - onedark（Atom相似的主题）
     - bracket-pair-colorizer-2（彩色括号）
+- **永久卷分区清单（用于保存永久数据，修改/重置docker不会丢失数据）：**
+  - **/home** （用户家目录，保存环境变量，VSCODE主题/设置等等）
+  - **/usr/local** （用户默认编译安装目录，根据个别小伙伴的需求，特地设置保存该目录，方便编译安装的程序得以保存。）
 
 ----
+
+## 关于Code-Server
 
 `code-server` 是微软 [VS Code](https://github.com/Microsoft/vscode) 运行在远端的在线 编辑器, 可以在任意的地方通过浏览器访问.
 
