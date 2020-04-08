@@ -30,9 +30,9 @@ ENV CODE_SERVER_HOME "${HOME_DIR}/.local/share/code-server"
 RUN mkdir -p /home/coder/.local/share/code-server/User
 
 # Init ZSH
+ENV SHELL "/bin/zsh"
 RUN git clone https://github.com/robbyrussell/oh-my-zsh.git ~/.oh-my-zsh
 COPY ./config/zshrc ~/.zshrc
-ENV SHELL /bin/zsh
 
 # Install VSCode Files
 RUN sudo mkdir /app
