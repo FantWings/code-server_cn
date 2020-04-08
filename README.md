@@ -1,6 +1,6 @@
 # code-server 中文版
 
-本页面由小翼个人进行手动汉化，内容链接均来自原作者,如需访问原作者，[点击这里](https://github.com/cdr/code-server)，**如有镜像特殊需求或问题，可[前往此处](https://github.com/fantwings/code-server_cn/issues)提交issue**，**[Demo站点](https://code.furry.top/demo)** （仅用于Demo演示，请不要存放重要数据，密码为：furry.top）
+本页面由小翼个人进行手动汉化，内容链接均来自原作者,如需访问原作者，[点击这里](https://github.com/cdr/code-server)，**如有镜像特殊需求或问题，可[前往此处](https://github.com/fantwings/code-server_cn/issues)提交issue**。
 
 **最后维护日期：2020年4月7日17:27:24**
 
