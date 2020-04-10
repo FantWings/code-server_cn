@@ -20,7 +20,8 @@
   - Python扩展已改为Python-ExtensionPack（这个扩展包内容更全面） 
   - 修复时区错误（之前是UTC，现在为CST中国时区）
 
-----
+
+
 
 ## 容器集成以下模块：  
 - **母版：Debian10**
@@ -50,7 +51,8 @@
   - **/home** （用户家目录，保存环境变量，VSCODE主题/设置等等）
   - **/usr/local** （用户默认编译安装目录，根据个别小伙伴的需求，特地设置保存该目录，方便编译安装的程序得以保存。）
 
-----
+
+
 
 ## 关于Code-Server
 
@@ -65,7 +67,7 @@ docker run -it -p 127.0.0.1:8080:8080 -v "$PWD:/home/coder/project" codercom/cod
 - **在任意地方编辑:** 在Chromebook、平板电脑和笔记本电脑上使用一致的开发环境。在Linux机器上开发并从任何带有web浏览器的设备上随时继续编辑.
 - **服务器加持:** 利用大型云服务器加速测试，编译、下载等。在旅途中节约移动设备的电池续航寿命，因为所有密集型计算都在服务器上运行。
 
-![Example gif](https://github.com/cdr/code-server/blob/master/doc/assets/code-server.gif)
+![Example gif](https://github.com/cdr/code-server/blob/master/doc/assets/code-server.gif?raw=true)
 
 ## 开始使用
 
@@ -84,7 +86,7 @@ docker run -it -p 127.0.0.1:8080:8080 -v "$PWD:/home/coder/project" codercom/cod
 
 ### Digital Ocean
 
-[![Create a Droplet](https://github.com/cdr/code-server/blob/master/doc/assets/droplet.svg)](https://marketplace.digitalocean.com/apps/code-server?action=deploy)
+[![Create a Droplet](https://raw.githubusercontent.com/cdr/code-server/master/doc/assets/droplet.svg)](https://marketplace.digitalocean.com/apps/code-server?action=deploy)
 
 ### 下载编译后的二进制文件
 
