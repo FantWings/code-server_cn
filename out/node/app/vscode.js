@@ -59,9 +59,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var logger_1 = require("@coder/logger");
 var cp = __importStar(require("child_process"));
 var crypto = __importStar(require("crypto"));
-var fs = __importStar(require("fs-extra"));
 var path = __importStar(require("path"));
-var url = __importStar(require("url"));
 var http_1 = require("../../common/http");
 var util_1 = require("../../common/util");
 var http_2 = require("../http");
@@ -202,7 +200,7 @@ var VscodeHttpProvider = /** @class */ (function (_super) {
                         }
                         return [3 /*break*/, 5];
                     case 1:
-                        if (route.requestPath !== "/index.html") {
+                        if (!this.isRoot(route)) {
                             throw new http_1.HttpError("Not found", http_1.HttpCode.NotFound);
                         }
                         else if (!this.authenticated(request)) {
@@ -250,12 +248,12 @@ var VscodeHttpProvider = /** @class */ (function (_super) {
                         return [4 /*yield*/, settings_1.settings.read()];
                     case 1:
                         lastVisited = (_d.sent()).lastVisited;
-                        return [4 /*yield*/, this.getFirstValidPath([
+                        return [4 /*yield*/, this.getFirstPath([
                                 { url: route.query.workspace, workspace: true },
                                 { url: route.query.folder, workspace: false },
                                 this.args._ && this.args._.length > 0 ? { url: path.resolve(this.args._[this.args._.length - 1]) } : undefined,
                                 lastVisited,
-                            ], remoteAuthority)];
+                            ])];
                     case 2:
                         startPath = _d.sent();
                         _c = (_b = Promise).all;
@@ -293,64 +291,23 @@ var VscodeHttpProvider = /** @class */ (function (_super) {
         });
     };
     /**
-     * Choose the first valid path. If `workspace` is undefined then either a
-     * workspace or a directory are acceptable. Otherwise it must be a file if a
-     * workspace or a directory otherwise.
+     * Choose the first non-empty path.
      */
-    VscodeHttpProvider.prototype.getFirstValidPath = function (startPaths, remoteAuthority) {
+    VscodeHttpProvider.prototype.getFirstPath = function (startPaths) {
         return __awaiter(this, void 0, void 0, function () {
-            var i, startPath, paths, j, uri, stat, error_2;
+            var i, startPath, url;
             return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        i = 0;
-                        _a.label = 1;
-                    case 1:
-                        if (!(i < startPaths.length)) return [3 /*break*/, 8];
-                        startPath = startPaths[i];
-                        if (!startPath) {
-                            return [3 /*break*/, 7];
-                        }
-                        paths = typeof startPath.url === "string" ? [startPath.url] : startPath.url || [];
-                        j = 0;
-                        _a.label = 2;
-                    case 2:
-                        if (!(j < paths.length)) return [3 /*break*/, 7];
-                        uri = url.parse(paths[j]);
-                        _a.label = 3;
-                    case 3:
-                        _a.trys.push([3, 5, , 6]);
-                        if (!uri.pathname) {
-                            throw new Error(paths[j] + " is not a valid URL");
-                        }
-                        return [4 /*yield*/, fs.stat(uri.pathname)];
-                    case 4:
-                        stat = _a.sent();
-                        if (typeof startPath.workspace === "undefined" || startPath.workspace !== stat.isDirectory()) {
-                            return [2 /*return*/, {
-                                    url: url.format({
-                                        protocol: uri.protocol || "vscode-remote",
-                                        hostname: remoteAuthority.split(":")[0],
-                                        port: remoteAuthority.split(":")[1],
-                                        pathname: uri.pathname,
-                                        slashes: true,
-                                    }),
-                                    workspace: !stat.isDirectory(),
-                                }];
-                        }
-                        return [3 /*break*/, 6];
-                    case 5:
-                        error_2 = _a.sent();
-                        logger_1.logger.warn(error_2.message);
-                        return [3 /*break*/, 6];
-                    case 6:
-                        ++j;
-                        return [3 /*break*/, 2];
-                    case 7:
-                        ++i;
-                        return [3 /*break*/, 1];
-                    case 8: return [2 /*return*/, undefined];
+                for (i = 0; i < startPaths.length; ++i) {
+                    startPath = startPaths[i];
+                    url = startPath && (typeof startPath.url === "string" ? [startPath.url] : startPath.url || []).find(function (p) { return !!p; });
+                    if (startPath && url) {
+                        return [2 /*return*/, {
+                                url: url,
+                                workspace: !!startPath.workspace,
+                            }];
+                    }
                 }
+                return [2 /*return*/, undefined];
             });
         });
     };

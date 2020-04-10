@@ -18,9 +18,7 @@ export declare class VscodeHttpProvider extends HttpProvider {
     handleRequest(route: Route, request: http.IncomingMessage): Promise<HttpResponse>;
     private getRoot;
     /**
-     * Choose the first valid path. If `workspace` is undefined then either a
-     * workspace or a directory are acceptable. Otherwise it must be a file if a
-     * workspace or a directory otherwise.
+     * Choose the first non-empty path.
      */
-    private getFirstValidPath;
+    private getFirstPath;
 }

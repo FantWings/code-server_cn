@@ -126,7 +126,7 @@ var UpdateHttpProvider = /** @class */ (function (_super) {
             return __generator(this, function (_a) {
                 this.ensureAuthenticated(request);
                 this.ensureMethod(request);
-                if (route.requestPath !== "/index.html") {
+                if (!this.isRoot(route)) {
                     throw new http_1.HttpError("Not found", http_1.HttpCode.NotFound);
                 }
                 switch (route.base) {
@@ -319,7 +319,7 @@ var UpdateHttpProvider = /** @class */ (function (_super) {
     };
     UpdateHttpProvider.prototype.downloadAndApplyUpdate = function (update, targetPath) {
         return __awaiter(this, void 0, void 0, function () {
-            var releaseName, url, downloadPath, response, directoryPath, error_3;
+            var releaseName, url, downloadPath, response, directoryPath, backupPath, error_3;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0: return [4 /*yield*/, this.getReleaseName(update)];
@@ -333,7 +333,7 @@ var UpdateHttpProvider = /** @class */ (function (_super) {
                         response = _a.sent();
                         _a.label = 3;
                     case 3:
-                        _a.trys.push([3, 11, , 12]);
+                        _a.trys.push([3, 12, , 13]);
                         if (!downloadPath.endsWith(".tar.gz")) return [3 /*break*/, 5];
                         return [4 /*yield*/, this.extractTar(response, downloadPath)];
                     case 4:
@@ -353,22 +353,30 @@ var UpdateHttpProvider = /** @class */ (function (_super) {
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             targetPath = path.resolve(__dirname, "../../../");
                         }
-                        logger_1.logger.debug("Replacing files", logger_1.field("target", targetPath));
-                        return [4 /*yield*/, fs.move(directoryPath, targetPath, { overwrite: true })];
+                        backupPath = path.resolve(targetPath, "../" + path.basename(targetPath) + "." + Date.now().toString());
+                        logger_1.logger.debug("Replacing files", logger_1.field("target", targetPath), logger_1.field("backup", backupPath));
+                        return [4 /*yield*/, fs.move(targetPath, backupPath)
+                            // Move the new directory.
+                        ];
                     case 9:
                         _a.sent();
-                        return [4 /*yield*/, fs.remove(downloadPath)];
+                        // Move the new directory.
+                        return [4 /*yield*/, fs.move(directoryPath, targetPath)];
                     case 10:
+                        // Move the new directory.
+                        _a.sent();
+                        return [4 /*yield*/, fs.remove(downloadPath)];
+                    case 11:
                         _a.sent();
                         if (process.send) {
                             wrapper_1.ipcMain().relaunch(update.version);
                         }
-                        return [3 /*break*/, 12];
-                    case 11:
+                        return [3 /*break*/, 13];
+                    case 12:
                         error_3 = _a.sent();
                         response.destroy(error_3);
                         throw error_3;
-                    case 12: return [2 /*return*/];
+                    case 13: return [2 /*return*/];
                 }
             });
         });

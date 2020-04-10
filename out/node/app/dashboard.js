@@ -77,7 +77,7 @@ var DashboardHttpProvider = /** @class */ (function (_super) {
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
-                        if (route.requestPath !== "/index.html") {
+                        if (!this.isRoot(route)) {
                             throw new http_1.HttpError("Not found", http_1.HttpCode.NotFound);
                         }
                         _a = route.base;

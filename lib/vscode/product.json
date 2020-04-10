@@ -18,11 +18,11 @@
   "darwinBundleIdentifier": "com.visualstudio.code.oss",
   "linuxIconName": "com.visualstudio.code.oss",
   "licenseFileName": "LICENSE.txt",
-  "reportIssueUrl": "https://github.com/Microsoft/vscode/issues/new",
+  "reportIssueUrl": "https://github.com/cdr/code-server/issues/new",
   "urlProtocol": "code-oss",
   "extensionAllowedProposedApi": [
     "ms-vscode.references-view"
   ],
-  "commit": "e480f6527e11344a7c69b7cd024bce9379cea7f0",
-  "date": "2020-04-01T23:37:57.354Z"
+  "commit": "5aded14b87e017d32d080b686515f6a26be455f1",
+  "date": "2020-04-09T19:26:10.102Z"
 }

@@ -97,7 +97,7 @@ var ApiHttpProvider = /** @class */ (function (_super) {
                 switch (_e.label) {
                     case 0:
                         this.ensureAuthenticated(request);
-                        if (route.requestPath !== "/index.html") {
+                        if (!this.isRoot(route)) {
                             throw new http_1.HttpError("Not found", http_1.HttpCode.NotFound);
                         }
                         _a = route.base;

@@ -20,6 +20,16 @@ export declare enum AuthType {
 export declare type Query = {
     [key: string]: string | string[] | undefined;
 };
+export interface ProxyOptions {
+    /**
+     * A base path to strip from from the request before proxying if necessary.
+     */
+    base?: string;
+    /**
+     * The port to proxy.
+     */
+    port: string;
+}
 export interface HttpResponse<T = string | Buffer | object> {
     cache?: boolean;
     /**
@@ -69,6 +79,16 @@ export interface HttpResponse<T = string | Buffer | object> {
      * `undefined` to remove a query variable.
      */
     query?: Query;
+    /**
+     * Indicates the request should be proxied.
+     */
+    proxy?: ProxyOptions;
+}
+export interface WsResponse {
+    /**
+     * Indicates the web socket should be proxied.
+     */
+    proxy?: ProxyOptions;
 }
 /**
  * Use when you need to run search and replace on a file's content before
@@ -89,13 +109,30 @@ export interface HttpServerOptions {
     readonly host?: string;
     readonly password?: string;
     readonly port?: number;
+    readonly proxyDomains?: string[];
     readonly socket?: string;
 }
 export interface Route {
+    /**
+     * Base path part (in /test/path it would be "/test").
+     */
     base: string;
+    /**
+     * Remaining part of the route (in /test/path it would be "/path"). It can be
+     * blank.
+     */
     requestPath: string;
+    /**
+     * Query variables included in the request.
+     */
     query: querystring.ParsedUrlQuery;
+    /**
+     * Normalized version of `originalPath`.
+     */
     fullPath: string;
+    /**
+     * Original path of the request without any modifications.
+     */
     originalPath: string;
 }
 export interface HttpProviderOptions {
@@ -114,9 +151,11 @@ export declare abstract class HttpProvider {
     constructor(options: HttpProviderOptions);
     dispose(): void;
     /**
-     * Handle web sockets on the registered endpoint.
+     * Handle web sockets on the registered endpoint. Normally the provider
+     * handles the request itself but it can return a response when necessary. The
+     * default is to throw a 404.
      */
-    handleWebSocket(_route: Route, _request: http.IncomingMessage, _socket: net.Socket, _head: Buffer): Promise<void>;
+    handleWebSocket(_route: Route, _request: http.IncomingMessage, _socket: net.Socket, _head: Buffer): Promise<WsResponse | void>;
     /**
      * Handle requests to the registered endpoint.
      */
@@ -166,7 +205,7 @@ export declare abstract class HttpProvider {
      * Return the provided password value if the payload contains the right
      * password otherwise return false. If no payload is specified use cookies.
      */
-    protected authenticated(request: http.IncomingMessage, payload?: AuthPayload): string | boolean;
+    authenticated(request: http.IncomingMessage, payload?: AuthPayload): string | boolean;
     /**
      * Parse POST data.
      */
@@ -175,6 +214,11 @@ export declare abstract class HttpProvider {
      * Parse cookies.
      */
     protected parseCookies<T extends Cookies>(request: http.IncomingMessage): T;
+    /**
+     * Return true if the route is for the root page. For example /base, /base/,
+     * or /base/index.html but not /base/path or /base/file.js.
+     */
+    protected isRoot(route: Route): boolean;
 }
 /**
  * Provides a heartbeat using a local file to indicate activity.
@@ -218,6 +262,14 @@ export declare class HttpServer {
     private readonly providers;
     private readonly heart;
     private readonly socketProvider;
+    /**
+     * Proxy domains are stored here without the leading `*.`
+     */
+    readonly proxyDomains: Set<string>;
+    /**
+     * Provides the actual proxying functionality.
+     */
+    private readonly proxy;
     constructor(options: HttpServerOptions);
     dispose(): void;
     getConnections(): Promise<number>;
@@ -252,5 +304,24 @@ export declare class HttpServer {
      * Parse a request URL so we can route it.
      */
     private parseUrl;
+    /**
+     * Proxy a request to the target.
+     */
+    private doProxy;
+    /**
+     * Get the domain that should be used for setting a cookie. This will allow
+     * the user to authenticate only once. This will return the highest level
+     * domain (e.g. `coder.com` over `test.coder.com` if both are specified).
+     */
+    private getCookieDomain;
+    /**
+     * Return a response if the request should be proxied. Anything that ends in a
+     * proxy domain and has a *single* subdomain should be proxied. Anything else
+     * should return `undefined` and will be handled as normal.
+     *
+     * For example if `coder.com` is specified `8080.coder.com` will be proxied
+     * but `8080.test.coder.com` and `test.8080.coder.com` will not.
+     */
+    maybeProxy(request: http.IncomingMessage): HttpResponse | undefined;
 }
 export {};

@@ -71,7 +71,7 @@ var LoginHttpProvider = /** @class */ (function (_super) {
     LoginHttpProvider.prototype.handleRequest = function (route, request) {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
-                if (this.options.auth !== http_2.AuthType.Password || route.requestPath !== "/index.html") {
+                if (this.options.auth !== http_2.AuthType.Password || !this.isRoot(route)) {
                     throw new http_1.HttpError("Not found", http_1.HttpCode.NotFound);
                 }
                 switch (route.base) {

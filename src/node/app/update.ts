@@ -61,7 +61,7 @@ export class UpdateHttpProvider extends HttpProvider {
     this.ensureAuthenticated(request)
     this.ensureMethod(request)
 
-    if (route.requestPath !== "/index.html") {
+    if (!this.isRoot(route)) {
       throw new HttpError("Not found", HttpCode.NotFound)
     }
 
@@ -221,8 +221,13 @@ export class UpdateHttpProvider extends HttpProvider {
         targetPath = path.resolve(__dirname, "../../../")
       }
 
-      logger.debug("Replacing files", field("target", targetPath))
-      await fs.move(directoryPath, targetPath, { overwrite: true })
+      // Move the old directory to prevent potential data loss.
+      const backupPath = path.resolve(targetPath, `../${path.basename(targetPath)}.${Date.now().toString()}`)
+      logger.debug("Replacing files", field("target", targetPath), field("backup", backupPath))
+      await fs.move(targetPath, backupPath)
+
+      // Move the new directory.
+      await fs.move(directoryPath, targetPath)
 
       await fs.remove(downloadPath)
 

@@ -34,6 +34,7 @@ export interface Args extends VsArgs {
     readonly "install-extension"?: string[];
     readonly "show-versions"?: boolean;
     readonly "uninstall-extension"?: string[];
+    readonly "proxy-domain"?: string[];
     readonly locale?: string;
     readonly _: string[];
 }

@@ -67,6 +67,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var logger_1 = require("@coder/logger");
 var fs = __importStar(require("fs-extra"));
 var http = __importStar(require("http"));
+var http_proxy_1 = __importDefault(require("http-proxy"));
 var httpolyglot = __importStar(require("httpolyglot"));
 var path = __importStar(require("path"));
 var querystring = __importStar(require("querystring"));
@@ -94,7 +95,9 @@ var HttpProvider = /** @class */ (function () {
         // No default behavior.
     };
     /**
-     * Handle web sockets on the registered endpoint.
+     * Handle web sockets on the registered endpoint. Normally the provider
+     * handles the request itself but it can return a response when necessary. The
+     * default is to throw a 404.
      */
     HttpProvider.prototype.handleWebSocket = function (
     /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -299,6 +302,13 @@ var HttpProvider = /** @class */ (function () {
         }
         return cookies;
     };
+    /**
+     * Return true if the route is for the root page. For example /base, /base/,
+     * or /base/index.html but not /base/path or /base/file.js.
+     */
+    HttpProvider.prototype.isRoot = function (route) {
+        return !route.requestPath || route.requestPath === "/index.html";
+    };
     return HttpProvider;
 }());
 exports.HttpProvider = HttpProvider;
@@ -356,6 +366,10 @@ var HttpServer = /** @class */ (function () {
         this.options = options;
         this.providers = new Map();
         this.socketProvider = new socket_1.SocketProxyProvider();
+        /**
+         * Provides the actual proxying functionality.
+         */
+        this.proxy = http_proxy_1.default.createProxyServer({});
         this.onRequest = function (request, response) { return __awaiter(_this, void 0, void 0, function () {
             var route, write, payload, _a, error_1, e, code, payload;
             var _this = this;
@@ -365,14 +379,20 @@ var HttpServer = /** @class */ (function () {
                         this.heart.beat();
                         route = this.parseUrl(request);
                         write = function (payload) {
+                            var host = request.headers.host || "";
+                            var idx = host.indexOf(":");
+                            var domain = idx !== -1 ? host.substring(0, idx) : host;
                             response.writeHead(payload.redirect ? http_1.HttpCode.Redirect : payload.code || http_1.HttpCode.Ok, __assign(__assign(__assign(__assign(__assign({ "Content-Type": payload.mime || util_2.getMediaMime(payload.filePath) }, (payload.redirect ? { Location: _this.constructRedirect(request, route, payload) } : {})), (request.headers["service-worker"] ? { "Service-Worker-Allowed": route.provider.base(route) } : {})), (payload.cache ? { "Cache-Control": "public, max-age=31536000" } : {})), (payload.cookie
                                 ? {
                                     "Set-Cookie": [
                                         payload.cookie.key + "=" + payload.cookie.value,
                                         "Path=" + util_1.normalize(payload.cookie.path || "/", true),
+                                        domain ? "Domain=" + _this.getCookieDomain(domain) : undefined,
                                         // "HttpOnly",
-                                        "SameSite=strict",
-                                    ].join(";"),
+                                        "SameSite=lax",
+                                    ]
+                                        .filter(function (l) { return !!l; })
+                                        .join(";"),
                                 }
                                 : {})), payload.headers));
                             if (payload.stream) {
@@ -396,7 +416,8 @@ var HttpServer = /** @class */ (function () {
                         _b.label = 1;
                     case 1:
                         _b.trys.push([1, 4, , 6]);
-                        _a = this.maybeRedirect(request, route);
+                        _a = this.maybeRedirect(request, route) ||
+                            (route.provider.authenticated(request) && this.maybeProxy(request));
                         if (_a) return [3 /*break*/, 3];
                         return [4 /*yield*/, route.provider.handleRequest(route, request)];
                     case 2:
@@ -404,10 +425,12 @@ var HttpServer = /** @class */ (function () {
                         _b.label = 3;
                     case 3:
                         payload = _a;
-                        if (!payload) {
-                            throw new http_1.HttpError("Not found", http_1.HttpCode.NotFound);
+                        if (payload.proxy) {
+                            this.doProxy(route, request, response, payload.proxy);
                         }
-                        write(payload);
+                        else {
+                            write(payload);
+                        }
                         return [3 /*break*/, 6];
                     case 4:
                         error_1 = _b.sent();
@@ -415,9 +438,11 @@ var HttpServer = /** @class */ (function () {
                         if (error_1.code === "ENOENT" || error_1.code === "EISDIR") {
                             e = new http_1.HttpError("Not found", http_1.HttpCode.NotFound);
                         }
-                        logger_1.logger.debug("Request error", logger_1.field("url", request.url));
-                        logger_1.logger.debug(error_1.stack);
                         code = typeof e.code === "number" ? e.code : http_1.HttpCode.ServerError;
+                        logger_1.logger.debug("Request error", logger_1.field("url", request.url), logger_1.field("code", code));
+                        if (code >= http_1.HttpCode.ServerError) {
+                            logger_1.logger.error(error_1.stack);
+                        }
                         return [4 /*yield*/, route.provider.getErrorRoot(route, code, code, e.message)];
                     case 5:
                         payload = _b.sent();
@@ -428,11 +453,11 @@ var HttpServer = /** @class */ (function () {
             });
         }); };
         this.onUpgrade = function (request, socket, head) { return __awaiter(_this, void 0, void 0, function () {
-            var route, _a, _b, _c, error_2;
-            return __generator(this, function (_d) {
-                switch (_d.label) {
+            var route, socketProxy, payload, _a, error_2;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
                     case 0:
-                        _d.trys.push([0, 3, , 4]);
+                        _b.trys.push([0, 4, , 5]);
                         this.heart.beat();
                         socket.on("error", function () { return socket.destroy(); });
                         if (this.options.cert && !socket.encrypted) {
@@ -445,22 +470,31 @@ var HttpServer = /** @class */ (function () {
                         if (!route.provider) {
                             throw new http_1.HttpError("Not found", http_1.HttpCode.NotFound);
                         }
-                        _b = (_a = route.provider).handleWebSocket;
-                        _c = [route, request];
                         return [4 /*yield*/, this.socketProvider.createProxy(socket)];
-                    case 1: return [4 /*yield*/, _b.apply(_a, _c.concat([_d.sent(), head]))];
+                    case 1:
+                        socketProxy = _b.sent();
+                        _a = this.maybeProxy(request);
+                        if (_a) return [3 /*break*/, 3];
+                        return [4 /*yield*/, route.provider.handleWebSocket(route, request, socketProxy, head)];
                     case 2:
-                        _d.sent();
-                        return [3 /*break*/, 4];
+                        _a = (_b.sent());
+                        _b.label = 3;
                     case 3:
-                        error_2 = _d.sent();
+                        payload = _a;
+                        if (payload && payload.proxy) {
+                            this.doProxy(route, request, { socket: socketProxy, head: head }, payload.proxy);
+                        }
+                        return [3 /*break*/, 5];
+                    case 4:
+                        error_2 = _b.sent();
                         socket.destroy(error_2);
                         logger_1.logger.warn("discarding socket connection: " + error_2.message);
-                        return [3 /*break*/, 4];
-                    case 4: return [2 /*return*/];
+                        return [3 /*break*/, 5];
+                    case 5: return [2 /*return*/];
                 }
             });
         }); };
+        this.proxyDomains = new Set((options.proxyDomains || []).map(function (d) { return d.replace(/^\*\./, ""); }));
         this.heart = new Heart(path.join(util_2.xdgLocalDir, "heartbeat"), function () { return __awaiter(_this, void 0, void 0, function () {
             var connections;
             return __generator(this, function (_a) {
@@ -483,6 +517,16 @@ var HttpServer = /** @class */ (function () {
         else {
             this.server = http.createServer(this.onRequest);
         }
+        this.proxy.on("error", function (error, _request, response) {
+            response.writeHead(http_1.HttpCode.ServerError);
+            response.end(error.message);
+        });
+        // Intercept the response to rewrite absolute redirects against the base path.
+        this.proxy.on("proxyRes", function (response, request) {
+            if (response.headers.location && response.headers.location.startsWith("/") && request.base) {
+                response.headers.location = request.base + response.headers.location;
+            }
+        });
     }
     HttpServer.prototype.dispose = function () {
         this.socketProvider.stop();
@@ -597,7 +641,6 @@ var HttpServer = /** @class */ (function () {
                 // Happens if it's a plain `domain.com`.
                 base = "/";
             }
-            requestPath = requestPath || "/index.html";
             return { base: base, requestPath: requestPath };
         };
         var parsedUrl = request.url ? url.parse(request.url, true) : { query: {}, pathname: "" };
@@ -616,6 +659,77 @@ var HttpServer = /** @class */ (function () {
             throw new Error("No provider for " + base);
         }
         return { base: base, fullPath: fullPath, requestPath: requestPath, query: parsedUrl.query, provider: provider, originalPath: originalPath };
+    };
+    /**
+     * Proxy a request or web socket to the target.
+     */
+    HttpServer.prototype.doProxy = function (route, request, response, options) {
+        var port = parseInt(options.port, 10);
+        if (isNaN(port)) {
+            throw new http_1.HttpError("\"" + options.port + "\" is not a valid number", http_1.HttpCode.BadRequest);
+        }
+        // REVIEW: Absolute redirects need to be based on the subpath but I'm not
+        // sure how best to get this information to the `proxyRes` event handler.
+        // For now I'm sticking it on the request object which is passed through to
+        // the event.
+        ;
+        request.base = options.base;
+        var isHttp = response instanceof http.ServerResponse;
+        var path = options.base ? route.fullPath.replace(options.base, "") : route.fullPath;
+        var proxyOptions = {
+            changeOrigin: true,
+            ignorePath: true,
+            target: (isHttp ? "http" : "ws") + "://127.0.0.1:" + port + path + (Object.keys(route.query).length > 0 ? "?" + querystring.stringify(route.query) : ""),
+            ws: !isHttp,
+        };
+        if (response instanceof http.ServerResponse) {
+            this.proxy.web(request, response, proxyOptions);
+        }
+        else {
+            this.proxy.ws(request, response.socket, response.head, proxyOptions);
+        }
+    };
+    /**
+     * Get the domain that should be used for setting a cookie. This will allow
+     * the user to authenticate only once. This will return the highest level
+     * domain (e.g. `coder.com` over `test.coder.com` if both are specified).
+     */
+    HttpServer.prototype.getCookieDomain = function (host) {
+        var current;
+        this.proxyDomains.forEach(function (domain) {
+            if (host.endsWith(domain) && (!current || domain.length < current.length)) {
+                current = domain;
+            }
+        });
+        // Setting the domain to localhost doesn't seem to work for subdomains (for
+        // example dev.localhost).
+        return current && current !== "localhost" ? current : host;
+    };
+    /**
+     * Return a response if the request should be proxied. Anything that ends in a
+     * proxy domain and has a *single* subdomain should be proxied. Anything else
+     * should return `undefined` and will be handled as normal.
+     *
+     * For example if `coder.com` is specified `8080.coder.com` will be proxied
+     * but `8080.test.coder.com` and `test.8080.coder.com` will not.
+     */
+    HttpServer.prototype.maybeProxy = function (request) {
+        // Split into parts.
+        var host = request.headers.host || "";
+        var idx = host.indexOf(":");
+        var domain = idx !== -1 ? host.substring(0, idx) : host;
+        var parts = domain.split(".");
+        // There must be an exact match.
+        var port = parts.shift();
+        var proxyDomain = parts.join(".");
+        if (!port || !this.proxyDomains.has(proxyDomain)) {
+            return undefined;
+        }
+        return {
+            proxy: {
+                port: port,
+            },
+        };
     };
     return HttpServer;
 }());

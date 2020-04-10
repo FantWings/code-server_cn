@@ -60,6 +60,7 @@ var path = __importStar(require("path"));
 var api_1 = require("./app/api");
 var dashboard_1 = require("./app/dashboard");
 var login_1 = require("./app/login");
+var proxy_1 = require("./app/proxy");
 var static_1 = require("./app/static");
 var update_1 = require("./app/update");
 var vscode_1 = require("./app/vscode");
@@ -84,7 +85,7 @@ catch (error) {
 var version = pkg.version || "development";
 var commit = pkg.commit || "development";
 var main = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var auth, originalPassword, _a, _b, options, _c, cert, certKey, _d, error_1, httpServer, vscode, api, update, serverAddress, sshPort, sshProvider, error_2, openAddress;
+    var auth, originalPassword, _a, _b, options, _c, _d, httpServer, vscode, api, update, serverAddress, sshHostKey, error_1, sshPort, sshProvider, error_2, openAddress;
     return __generator(this, function (_e) {
         switch (_e.label) {
             case 0:
@@ -102,64 +103,41 @@ var main = function (args) { return __awaiter(void 0, void 0, void 0, function (
                 _e.label = 3;
             case 3:
                 originalPassword = _a;
-                options = {
-                    auth: auth,
-                    cert: args.cert ? args.cert.value : undefined,
-                    certKey: args["cert-key"],
-                    sshHostKey: args["ssh-host-key"],
-                    commit: commit,
-                    host: args.host || (args.auth === http_1.AuthType.Password && typeof args.cert !== "undefined" ? "0.0.0.0" : "localhost"),
-                    password: originalPassword ? util_1.hash(originalPassword) : undefined,
-                    port: typeof args.port !== "undefined" ? args.port : process.env.PORT ? parseInt(process.env.PORT, 10) : 8080,
-                    socket: args.socket,
-                };
-                if (!(!options.cert && args.cert)) return [3 /*break*/, 5];
+                _c = [{ auth: auth,
+                        commit: commit, host: args.host || (args.auth === http_1.AuthType.Password && typeof args.cert !== "undefined" ? "0.0.0.0" : "localhost"), password: originalPassword ? util_1.hash(originalPassword) : undefined, port: typeof args.port !== "undefined" ? args.port : process.env.PORT ? parseInt(process.env.PORT, 10) : 8080, proxyDomains: args["proxy-domain"], socket: args.socket }];
+                if (!(args.cert && !args.cert.value)) return [3 /*break*/, 5];
                 return [4 /*yield*/, util_1.generateCertificate()];
             case 4:
-                _c = _e.sent(), cert = _c.cert, certKey = _c.certKey;
-                options.cert = cert;
-                options.certKey = certKey;
+                _d = _e.sent();
                 return [3 /*break*/, 6];
             case 5:
-                if (args.cert && !args["cert-key"]) {
-                    throw new Error("--cert-key is missing");
-                }
+                _d = {
+                    cert: args.cert && args.cert.value,
+                    certKey: args["cert-key"],
+                };
                 _e.label = 6;
             case 6:
-                if (!!args["disable-ssh"]) return [3 /*break*/, 11];
-                if (!(!options.sshHostKey && typeof options.sshHostKey !== "undefined")) return [3 /*break*/, 7];
-                throw new Error("--ssh-host-key cannot be blank");
-            case 7:
-                if (!!options.sshHostKey) return [3 /*break*/, 11];
-                _e.label = 8;
-            case 8:
-                _e.trys.push([8, 10, , 11]);
-                _d = options;
-                return [4 /*yield*/, util_1.generateSshHostKey()];
-            case 9:
-                _d.sshHostKey = _e.sent();
-                return [3 /*break*/, 11];
-            case 10:
-                error_1 = _e.sent();
-                logger_1.logger.error("Unable to start SSH server", logger_1.field("error", error_1.message));
-                return [3 /*break*/, 11];
-            case 11:
+                options = __assign.apply(void 0, _c.concat([(_d)]));
+                if (options.cert && !options.certKey) {
+                    throw new Error("--cert-key is missing");
+                }
                 httpServer = new http_1.HttpServer(options);
                 vscode = httpServer.registerHttpProvider("/", vscode_1.VscodeHttpProvider, args);
                 api = httpServer.registerHttpProvider("/api", api_1.ApiHttpProvider, httpServer, vscode, args["user-data-dir"]);
                 update = httpServer.registerHttpProvider("/update", update_1.UpdateHttpProvider, !args["disable-updates"]);
+                httpServer.registerHttpProvider("/proxy", proxy_1.ProxyHttpProvider);
                 httpServer.registerHttpProvider("/login", login_1.LoginHttpProvider);
                 httpServer.registerHttpProvider("/static", static_1.StaticHttpProvider);
                 httpServer.registerHttpProvider("/dashboard", dashboard_1.DashboardHttpProvider, api, update);
                 wrapper_1.ipcMain().onDispose(function () { return httpServer.dispose(); });
                 logger_1.logger.info("code-server " + version + " " + commit);
                 return [4 /*yield*/, httpServer.listen()];
-            case 12:
+            case 7:
                 serverAddress = _e.sent();
                 logger_1.logger.info("HTTP server listening on " + serverAddress);
                 if (auth === http_1.AuthType.Password && !process.env.PASSWORD) {
                     logger_1.logger.info("  - Password is " + originalPassword);
-                    logger_1.logger.info("    - To use your own password, set the PASSWORD environment variable");
+                    logger_1.logger.info("    - To use your own password set the PASSWORD environment variable");
                     if (!args.auth) {
                         logger_1.logger.info("    - To disable use `--auth none`");
                     }
@@ -171,42 +149,61 @@ var main = function (args) { return __awaiter(void 0, void 0, void 0, function (
                     logger_1.logger.info("  - No authentication");
                 }
                 if (httpServer.protocol === "https") {
-                    logger_1.logger.info(typeof args.cert === "string"
+                    logger_1.logger.info(args.cert && args.cert.value
                         ? "  - Using provided certificate and key for HTTPS"
                         : "  - Using generated certificate and key for HTTPS");
                 }
                 else {
                     logger_1.logger.info("  - Not serving HTTPS");
                 }
+                if (httpServer.proxyDomains.size > 0) {
+                    logger_1.logger.info("  - Proxying the following domain" + (httpServer.proxyDomains.size === 1 ? "" : "s") + ":");
+                    httpServer.proxyDomains.forEach(function (domain) { return logger_1.logger.info("    - *." + domain); });
+                }
                 logger_1.logger.info("Automatic updates are " + (update.enabled ? "enabled" : "disabled"));
-                if (!(!args["disable-ssh"] && options.sshHostKey)) return [3 /*break*/, 16];
-                sshProvider = httpServer.registerHttpProvider("/ssh", server_1.SshProvider, options.sshHostKey);
-                _e.label = 13;
-            case 13:
-                _e.trys.push([13, 15, , 16]);
+                sshHostKey = args["ssh-host-key"];
+                if (!(!args["disable-ssh"] && !sshHostKey)) return [3 /*break*/, 11];
+                _e.label = 8;
+            case 8:
+                _e.trys.push([8, 10, , 11]);
+                return [4 /*yield*/, util_1.generateSshHostKey()];
+            case 9:
+                sshHostKey = _e.sent();
+                return [3 /*break*/, 11];
+            case 10:
+                error_1 = _e.sent();
+                logger_1.logger.error("Unable to start SSH server", logger_1.field("error", error_1.message));
+                return [3 /*break*/, 11];
+            case 11:
+                if (!(!args["disable-ssh"] && sshHostKey)) return [3 /*break*/, 15];
+                sshProvider = httpServer.registerHttpProvider("/ssh", server_1.SshProvider, sshHostKey);
+                _e.label = 12;
+            case 12:
+                _e.trys.push([12, 14, , 15]);
                 return [4 /*yield*/, sshProvider.listen()];
-            case 14:
+            case 13:
                 sshPort = _e.sent();
-                return [3 /*break*/, 16];
-            case 15:
+                return [3 /*break*/, 15];
+            case 14:
                 error_2 = _e.sent();
                 logger_1.logger.warn("SSH server: " + error_2.message);
-                return [3 /*break*/, 16];
-            case 16:
+                return [3 /*break*/, 15];
+            case 15:
                 if (typeof sshPort !== "undefined") {
                     logger_1.logger.info("SSH server listening on localhost:" + sshPort);
+                    logger_1.logger.info("  - To disable use `--disable-ssh`");
                 }
                 else {
                     logger_1.logger.info("SSH server disabled");
                 }
-                if (!(serverAddress && !options.socket && args.open)) return [3 /*break*/, 18];
+                if (!(serverAddress && !options.socket && args.open)) return [3 /*break*/, 17];
                 openAddress = serverAddress.replace(/:\/\/0.0.0.0/, "://localhost");
                 return [4 /*yield*/, util_1.open(openAddress).catch(console.error)];
-            case 17:
+            case 16:
                 _e.sent();
                 logger_1.logger.info("Opened " + openAddress);
-                _e.label = 18;
-            case 18: return [2 /*return*/];
+                _e.label = 17;
+            case 17: return [2 /*return*/];
         }
     });
 }); };

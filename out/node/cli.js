@@ -77,6 +77,7 @@ var options = {
     "install-extension": { type: "string[]", description: "Install or update a VS Code extension by id or vsix." },
     "uninstall-extension": { type: "string[]", description: "Uninstall a VS Code extension by id." },
     "show-versions": { type: "boolean", description: "Show VS Code extension versions." },
+    "proxy-domain": { type: "string[]", description: "Domain used for proxying ports." },
     locale: { type: "string" },
     log: { type: LogLevel },
     verbose: { type: "boolean", short: "vvv", description: "Enable verbose logging." },
