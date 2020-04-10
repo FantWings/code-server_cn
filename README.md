@@ -67,11 +67,9 @@ docker run -it -p 127.0.0.1:8080:8080 -v "$PWD:/home/coder/project" codercom/cod
 - **在任意地方编辑:** 在Chromebook、平板电脑和笔记本电脑上使用一致的开发环境。在Linux机器上开发并从任何带有web浏览器的设备上随时继续编辑.
 - **服务器加持:** 利用大型云服务器加速测试，编译、下载等。在旅途中节约移动设备的电池续航寿命，因为所有密集型计算都在服务器上运行。
 
-<<<<<<< HEAD
+
 ![Example gif](/doc/assets/code-server.gif)
-=======
-![Example gif](https://github.com/cdr/code-server/blob/master/doc/assets/code-server.gif?raw=true)
->>>>>>> 3a4d02eec59f9ab7dada4f8700f724a63a409c80
+
 
 ## 开始使用
 
