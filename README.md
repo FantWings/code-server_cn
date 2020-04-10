@@ -2,13 +2,31 @@
 
 本页面由小翼个人进行手动汉化，内容链接均来自原作者,如需访问原作者，[点击这里](https://github.com/cdr/code-server)，**如有镜像特殊需求或问题，可[前往此处](https://github.com/fantwings/code-server_cn/issues)提交issue**。
 
-**最后维护日期：2020年4月7日17:27:24**
+**喜欢请点个Star！！你们的支持是我保持更新的动力！**
 
-## 容器已集成以下模块：  
+**最后维护日期：2020年4月10日16:12:15** - 
+**主程序版本：3.1.0**
+
+### 最后更新内容：
+- 主程序
+  - 移除旧版本文件而不是覆盖他们
+  - 修复更新程序错误的报告程序更新失败的问题
+  - 添加代理支持 （查看FAQ获取更多信息）
+  - 修复打开的目录中带有空格（或者其他特殊字符）的问题
+- 镜像
+  - 移除了vscode-icon插件（因为他开始提示无法在远程模式下使用了）
+  - 移除了VSCODE版Chrome（很卡，带宽不够的话没什么屌用，还不如映射端口用LiveServer）
+  - 现在中文包采用在线安装方式，而不再使用离线安装（之前是因为最新版本会出错）。
+  - Python扩展已改为Python-ExtensionPack（这个扩展包内容更全面） 
+  - 修复时区错误（之前是UTC，现在为CST中国时区）
+
+----
+
+## 容器集成以下模块：  
 - **母版：Debian10**
   - 阿里云APT镜像
   - 中文UTF-8环境支持
-  - 基础编译套件（software-properties-common build-essential）
+  - 基础编译套件（build-essential）
   - 基础工具（bsdtar curl sudo wget git vim locales）
   - Python3 + Pip3
   - NodeJS
@@ -82,3 +100,4 @@ See [./doc/FAQ.md](https://github.com/cdr/code-server/blob/master/doc/FAQ.md).
 ## 企业版
 
 前往 [我们的企业页面](https://coder.com) 获取更多企业版定制相关的需求。
+
