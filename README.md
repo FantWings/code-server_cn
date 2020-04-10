@@ -86,7 +86,7 @@ docker run -it -p 127.0.0.1:8080:8080 -v "$PWD:/home/coder/project" codercom/cod
 
 ### Digital Ocean
 
-[![Create a Droplet](https://raw.githubusercontent.com/cdr/code-server/master/doc/assets/droplet.svg)](https://marketplace.digitalocean.com/apps/code-server?action=deploy)
+[![Create a Droplet](.doc/assets/droplet.svg)](https://marketplace.digitalocean.com/apps/code-server?action=deploy)
 
 ### 下载编译后的二进制文件
 
