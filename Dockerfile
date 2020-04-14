@@ -41,7 +41,7 @@ RUN sudo ln -s /app/code-server /usr/local/bin/code-server && \
 	sudo ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
 	mkdir -p /home/coder/.local/share/code-server/User && \
 	cp /app/config/locale.json ${CODE_SERVER_HOME}/User/locale.json && \
-	ldconfig
+	sudo ldconfig
 
 # Setup User Visual Studio Code Extentions From Internet
 RUN code-server --install-extension donjayamanne.python-extension-pack && \
