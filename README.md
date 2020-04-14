@@ -4,7 +4,7 @@
 
 **喜欢请点个Star！！你们的支持是我保持更新的动力！**
 
-**最后维护日期：2020年4月10日16:12:15** - 
+**最后维护日期：2020年4月14日11:43:30** - 
 **主程序版本：3.1.0**
 
 ### 最后更新内容：
@@ -19,8 +19,8 @@
   - 现在中文包采用在线安装方式，而不再使用离线安装（之前是因为最新版本会出错）。
   - Python扩展已改为Python-ExtensionPack（这个扩展包内容更全面） 
   - 修复时区错误（之前是UTC，现在为CST中国时区）
-
-
+  - 完善README文档，增加镜像部署教学。
+  - 为了进一步缩减体积，基础工具将改为默认安装编译套件，可根据需要自行编译或使用apt安装。
 
 
 ## 容器集成以下模块：  
@@ -31,7 +31,6 @@
   - 基础工具（bsdtar curl sudo wget git vim locales）
   - Python3 + Pip3
   - NodeJS
-  - JAVA-JDK-11
 - **VSCODE 预装扩展清单（不需要可卸载，需要可额外安装，可随时更新不丢失）：**
   - **语言扩展相关**
     - Python
@@ -43,7 +42,7 @@
     - code-spell-checker（单词语法检查器）
     - gitblame（Git历史查询）
   - **美化扩展**
-    - vscode-icons（图标包）
+    - ~~vscode-icons（图标包）~~
     - indent-rainbow（彩色TAB间隔）
     - onedark（Atom相似的主题）
     - bracket-pair-colorizer-2（彩色括号）
@@ -52,45 +51,52 @@
   - **/usr/local** （用户默认编译安装目录，根据个别小伙伴的需求，特地设置保存该目录，方便编译安装的程序得以保存。）
 
 
-
-
 ## 关于Code-Server
 
-`code-server` 是微软 [VS Code](https://github.com/Microsoft/vscode) 运行在远端的在线 编辑器, 可以在任意的地方通过浏览器访问.
+`Code-Server` 是微软 [VS Code](https://github.com/Microsoft/vscode) 运行在远端的在线 编辑器, 可以在任意的地方通过浏览器访问.
 
 通过以下命令试一下：
-
 ```bash
-docker run -it -p 127.0.0.1:8080:8080 -v "$PWD:/home/coder/project" codercom/code-server
+docker run --name=容器名字 -p 127.0.0.1:8080:8080 fantwings/code-server_cn 
+```
+查询随机分配的默认密码：
+```bash
+docker logs 容器名字
 ```
 
 - **在任意地方编辑:** 在Chromebook、平板电脑和笔记本电脑上使用一致的开发环境。在Linux机器上开发并从任何带有web浏览器的设备上随时继续编辑.
 - **服务器加持:** 利用大型云服务器加速测试，编译、下载等。在旅途中节约移动设备的电池续航寿命，因为所有密集型计算都在服务器上运行。
 
 
-![Example gif](/doc/assets/code-server.gif)
+![Example gif](https://github.com/cdr/code-server/blob/master/doc/assets/code-server.gif?raw=true)
 
 
 ## 开始使用
 
 ### 环境需求
 
-- 64位 宿主机.
+- 64位宿主机.
 - 至少拥有 1GB 以上的运行内存.
 - 建议双核以上的CPU核心 (1核可能会出现运行上的卡顿或缓慢).
-- 通过HTTPS 或者 localhost 进行安全访问 (开启 service workers 和
+- 建议通过HTTPS 或者 localhost 进行安全访问 (用于开启 service workers 和
   剪贴板支持).
 - Linux环境需求: GLIBC 2.17 或更高版本 以及 GLIBCXX 3.4.15 或更高版本。
 
+### 通过Docker部署镜像运行（推荐）
+IDE密码是通过环境变量“PASSWORD”进行定义的，默认为随机分配，如需要密码访问，可在部署时同时设置密码：
+```bash
+docker run --name=容器名字 -p 127.0.0.1:8080:8080 -e "PASSWORD=你的密码" fantwings/code-server_cn
+```
+
 ### 通过SSH运行
 
-使用 [sshcode](https://github.com/codercom/sshcode) 进行简单配置.
+使用 [sshcode](https://github.com/codercom/sshcode) 进行简单配置。
 
 ### Digital Ocean
 
 [![Create a Droplet](./doc/assets/droplet.svg)](https://marketplace.digitalocean.com/apps/code-server)
 
-### 下载编译后的二进制文件
+### 从二进制文件中直接运行
 
 1. [点击这里](https://github.com/cdr/code-server/releases). (支持 Linux 和
    OS X。 Windows 在未来计划支持。)
