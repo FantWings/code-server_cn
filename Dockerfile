@@ -5,9 +5,8 @@ COPY ./config/sources.list /etc/apt/sources.list
 RUN apt-get update && apt-get install -y \
 	software-properties-common build-essential \
 	bsdtar curl sudo wget git vim locales zsh && \
-	#python3 python3-pip \
-	#openjdk-11-jdk \
-	#nodejs \
+	python3 python3-pip \
+	nodejs \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/*
 
