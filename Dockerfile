@@ -4,10 +4,10 @@ FROM debian
 COPY ./config/sources.list /etc/apt/sources.list
 RUN apt-get update && apt-get install -y \
 	software-properties-common build-essential \
-	bsdtar curl sudo wget git vim locales zsh\
-	python3 python3-pip \
-	openjdk-11-jdk \
-	nodejs && \
+	bsdtar curl sudo wget git vim locales zsh && \
+	#python3 python3-pip \
+	#openjdk-11-jdk \
+	#nodejs \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/*
 
@@ -41,7 +41,8 @@ COPY . /app
 RUN sudo ln -s /app/code-server /usr/local/bin/code-server && \
 	sudo ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
 	mkdir -p /home/coder/.local/share/code-server/User && \
-	cp /app/config/locale.json ${CODE_SERVER_HOME}/User/locale.json
+	cp /app/config/locale.json ${CODE_SERVER_HOME}/User/locale.json && \
+	ldconfig
 
 # Setup User Visual Studio Code Extentions From Internet
 RUN code-server --install-extension donjayamanne.python-extension-pack && \
