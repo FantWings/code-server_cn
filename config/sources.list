@@ -4,10 +4,3 @@ deb-src http://mirrors.163.com/debian/ buster main non-free contrib
 # buster-updates, previously known as 'volatile'
 deb http://mirrors.163.com/debian/ buster-updates main contrib non-free
 deb-src http://mirrors.163.com/debian/ buster-updates main contrib non-free
-
-deb http://mirrors.aliyun.com/debian buster main contrib non-free
-deb-src http://mirrors.aliyun.com/debian buster main contrib non-free
-deb http://mirrors.aliyun.com/debian buster-updates main contrib non-free
-deb-src http://mirrors.aliyun.com/debian buster-updates main contrib non-free
-deb http://mirrors.aliyun.com/debian-security buster/updates main contrib non-free
-deb-src http://mirrors.aliyun.com/debian-security buster/updates main contrib non-free

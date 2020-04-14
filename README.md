@@ -25,7 +25,7 @@
 
 ## 容器集成以下模块：  
 - **母版：Debian10**
-  - 阿里云APT镜像
+  - 网易163 APT镜像
   - 中文UTF-8环境支持
   - 基础编译套件（build-essential）
   - 基础工具（bsdtar curl sudo wget git vim locales）
