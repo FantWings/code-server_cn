@@ -11,4 +11,4 @@ var e,t=require("process");Object.defineProperty(exports,"__esModule",{value:!0}
 },{"@coder/logger":"PYIK"}],"O6cr":[function(require,module,exports) {
 "use strict";Object.defineProperty(exports,"__esModule",{value:!0});var e=require("../common/util"),r=e.getOptions();if("serviceWorker"in navigator){var i=e.normalize(r.base+"/static/"+r.commit+"/dist/serviceWorker.js");navigator.serviceWorker.register(i,{scope:r.base||"/"}).then(function(){console.log("[Service Worker] registered")})}
 },{"../common/util":"TCzD"}]},{},["O6cr"], null)
-//# sourceMappingURL=/static/5aded14b87e017d32d080b686515f6a26be455f1/dist/register.js.map
+//# sourceMappingURL=/static/28e91ba70cd70fa9adf3f2e3e3b87631b5667ecf/dist/register.js.map

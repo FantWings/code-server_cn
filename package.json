@@ -1,7 +1,7 @@
 {
   "name": "code-server",
   "license": "MIT",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "scripts": {
     "clean": "ci/clean.sh",
     "vscode": "ci/vscode.sh",
@@ -64,5 +64,5 @@
     "tar-fs": "^2.0.0",
     "ws": "^7.2.0"
   },
-  "commit": "5aded14b87e017d32d080b686515f6a26be455f1"
+  "commit": "28e91ba70cd70fa9adf3f2e3e3b87631b5667ecf"
 }

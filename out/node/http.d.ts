@@ -309,8 +309,8 @@ export declare class HttpServer {
      */
     private doProxy;
     /**
-     * Get the domain that should be used for setting a cookie. This will allow
-     * the user to authenticate only once. This will return the highest level
+     * Get the value that should be used for setting a cookie domain. This will
+     * allow the user to authenticate only once. This will use the highest level
      * domain (e.g. `coder.com` over `test.coder.com` if both are specified).
      */
     private getCookieDomain;
