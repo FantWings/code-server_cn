@@ -55,7 +55,8 @@ RUN code-server --install-extension donjayamanne.python-extension-pack && \
 	code-server --install-extension streetsidesoftware.code-spell-checker && \
 	code-server --install-extension akamud.vscode-theme-onedark && \
 	code-server --install-extension waderyan.gitblame && \
-	code-server --install-extension CoenraadS.bracket-pair-colorizer-2
+	code-server --install-extension CoenraadS.bracket-pair-colorizer-2 \
+	code-server --install-extension vscode-icons-team.vscode-icons
 	
 #Set DataVolume incase they lose ther shit.
 VOLUME [ "/home/coder" ]

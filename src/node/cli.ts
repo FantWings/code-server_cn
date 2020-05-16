@@ -30,9 +30,8 @@ export interface Args extends VsArgs {
   log?: LogLevel
   readonly open?: boolean
   readonly port?: number
+  readonly "bind-addr"?: string
   readonly socket?: string
-  readonly "ssh-host-key"?: string
-  readonly "disable-ssh"?: boolean
   readonly version?: boolean
   readonly force?: boolean
   readonly "list-extensions"?: boolean
@@ -90,17 +89,19 @@ const options: Options<Required<Args>> = {
   "cert-key": { type: "string", path: true, description: "Path to certificate key when using non-generated cert." },
   "disable-updates": { type: "boolean", description: "Disable automatic updates." },
   "disable-telemetry": { type: "boolean", description: "Disable telemetry." },
-  host: { type: "string", description: "Host for the HTTP server." },
   help: { type: "boolean", short: "h", description: "Show this output." },
   json: { type: "boolean" },
   open: { type: "boolean", description: "Open in browser on startup. Does not work remotely." },
-  port: { type: "number", description: "Port for the HTTP server." },
-  socket: { type: "string", path: true, description: "Path to a socket (host and port will be ignored)." },
+
+  "bind-addr": { type: "string", description: "Address to bind to in host:port." },
+
+  // These two have been deprecated by bindAddr.
+  host: { type: "string", description: "" },
+  port: { type: "number", description: "" },
+
+  socket: { type: "string", path: true, description: "Path to a socket (bind-addr will be ignored)." },
   version: { type: "boolean", short: "v", description: "Display version information." },
   _: { type: "string[]" },
-
-  "disable-ssh": { type: "boolean", description: "Disable the SSH server." },
-  "ssh-host-key": { type: "string", path: true, description: "SSH server host key." },
 
   "user-data-dir": { type: "string", path: true, description: "Path to the user data directory." },
   "extensions-dir": { type: "string", path: true, description: "Path to the extensions directory." },
@@ -212,7 +213,7 @@ export const parse = (argv: string[]): Args => {
           ;(args[key] as OptionalString) = new OptionalString(value)
           break
         default: {
-          if (!Object.values(option.type).find((v) => v === value)) {
+          if (!Object.values(option.type).includes(value)) {
             throw new Error(`--${key} valid values: [${Object.values(option.type).join(", ")}]`)
           }
           ;(args[key] as string) = value
@@ -229,20 +230,26 @@ export const parse = (argv: string[]): Args => {
 
   logger.debug("parsed command line", field("args", args))
 
-  // Ensure the environment variable and the flag are synced up. The flag takes
-  // priority over the environment variable.
-  if (args.log === LogLevel.Trace || process.env.LOG_LEVEL === LogLevel.Trace || args.verbose) {
-    args.log = process.env.LOG_LEVEL = LogLevel.Trace
-    args.verbose = true
-  } else if (!args.log && process.env.LOG_LEVEL) {
+  // --verbose takes priority over --log and --log takes priority over the
+  // environment variable.
+  if (args.verbose) {
+    args.log = LogLevel.Trace
+  } else if (
+    !args.log &&
+    process.env.LOG_LEVEL &&
+    Object.values(LogLevel).includes(process.env.LOG_LEVEL as LogLevel)
+  ) {
     args.log = process.env.LOG_LEVEL as LogLevel
-  } else if (args.log) {
-    process.env.LOG_LEVEL = args.log
   }
 
+  // Sync --log, --verbose, the environment variable, and logger level.
+  if (args.log) {
+    process.env.LOG_LEVEL = args.log
+  }
   switch (args.log) {
     case LogLevel.Trace:
       logger.level = Level.Trace
+      args.verbose = true
       break
     case LogLevel.Debug:
       logger.level = Level.Debug

@@ -66,7 +66,6 @@ var update_1 = require("./app/update");
 var vscode_1 = require("./app/vscode");
 var cli_1 = require("./cli");
 var http_1 = require("./http");
-var server_1 = require("./ssh/server");
 var util_1 = require("./util");
 var wrapper_1 = require("./wrapper");
 process.on("uncaughtException", function (error) {
@@ -85,7 +84,7 @@ catch (error) {
 var version = pkg.version || "development";
 var commit = pkg.commit || "development";
 var main = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var auth, originalPassword, _a, _b, options, _c, _d, httpServer, vscode, api, update, serverAddress, sshHostKey, error_1, sshPort, sshProvider, error_2, openAddress;
+    var auth, originalPassword, _a, _b, host, port, u, options, _c, _d, httpServer, vscode, api, update, serverAddress, openAddress;
     return __generator(this, function (_e) {
         switch (_e.label) {
             case 0:
@@ -103,8 +102,15 @@ var main = function (args) { return __awaiter(void 0, void 0, void 0, function (
                 _e.label = 3;
             case 3:
                 originalPassword = _a;
+                host = args.host;
+                port = args.port;
+                if (args["bind-addr"] !== undefined) {
+                    u = new URL("http://" + args["bind-addr"]);
+                    host = u.hostname;
+                    port = parseInt(u.port, 10);
+                }
                 _c = [{ auth: auth,
-                        commit: commit, host: args.host || (args.auth === http_1.AuthType.Password && typeof args.cert !== "undefined" ? "0.0.0.0" : "localhost"), password: originalPassword ? util_1.hash(originalPassword) : undefined, port: typeof args.port !== "undefined" ? args.port : process.env.PORT ? parseInt(process.env.PORT, 10) : 8080, proxyDomains: args["proxy-domain"], socket: args.socket }];
+                        commit: commit, host: host || (args.auth === http_1.AuthType.Password && args.cert !== undefined ? "0.0.0.0" : "localhost"), password: originalPassword ? util_1.hash(originalPassword) : undefined, port: port !== undefined ? port : process.env.PORT ? parseInt(process.env.PORT, 10) : 8080, proxyDomains: args["proxy-domain"], socket: args.socket }];
                 if (!(args.cert && !args.cert.value)) return [3 /*break*/, 5];
                 return [4 /*yield*/, util_1.generateCertificate()];
             case 4:
@@ -161,49 +167,14 @@ var main = function (args) { return __awaiter(void 0, void 0, void 0, function (
                     httpServer.proxyDomains.forEach(function (domain) { return logger_1.logger.info("    - *." + domain); });
                 }
                 logger_1.logger.info("Automatic updates are " + (update.enabled ? "enabled" : "disabled"));
-                sshHostKey = args["ssh-host-key"];
-                if (!(!args["disable-ssh"] && !sshHostKey)) return [3 /*break*/, 11];
-                _e.label = 8;
-            case 8:
-                _e.trys.push([8, 10, , 11]);
-                return [4 /*yield*/, util_1.generateSshHostKey()];
-            case 9:
-                sshHostKey = _e.sent();
-                return [3 /*break*/, 11];
-            case 10:
-                error_1 = _e.sent();
-                logger_1.logger.error("Unable to start SSH server", logger_1.field("error", error_1.message));
-                return [3 /*break*/, 11];
-            case 11:
-                if (!(!args["disable-ssh"] && sshHostKey)) return [3 /*break*/, 15];
-                sshProvider = httpServer.registerHttpProvider("/ssh", server_1.SshProvider, sshHostKey);
-                _e.label = 12;
-            case 12:
-                _e.trys.push([12, 14, , 15]);
-                return [4 /*yield*/, sshProvider.listen()];
-            case 13:
-                sshPort = _e.sent();
-                return [3 /*break*/, 15];
-            case 14:
-                error_2 = _e.sent();
-                logger_1.logger.warn("SSH server: " + error_2.message);
-                return [3 /*break*/, 15];
-            case 15:
-                if (typeof sshPort !== "undefined") {
-                    logger_1.logger.info("SSH server listening on localhost:" + sshPort);
-                    logger_1.logger.info("  - To disable use `--disable-ssh`");
-                }
-                else {
-                    logger_1.logger.info("SSH server disabled");
-                }
-                if (!(serverAddress && !options.socket && args.open)) return [3 /*break*/, 17];
+                if (!(serverAddress && !options.socket && args.open)) return [3 /*break*/, 9];
                 openAddress = serverAddress.replace(/:\/\/0.0.0.0/, "://localhost");
                 return [4 /*yield*/, util_1.open(openAddress).catch(console.error)];
-            case 16:
+            case 8:
                 _e.sent();
                 logger_1.logger.info("Opened " + openAddress);
-                _e.label = 17;
-            case 17: return [2 /*return*/];
+                _e.label = 9;
+            case 9: return [2 /*return*/];
         }
     });
 }); };

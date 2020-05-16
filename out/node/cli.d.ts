@@ -25,9 +25,8 @@ export interface Args extends VsArgs {
     log?: LogLevel;
     readonly open?: boolean;
     readonly port?: number;
+    readonly "bind-addr"?: string;
     readonly socket?: string;
-    readonly "ssh-host-key"?: string;
-    readonly "disable-ssh"?: boolean;
     readonly version?: boolean;
     readonly force?: boolean;
     readonly "list-extensions"?: boolean;

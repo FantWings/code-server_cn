@@ -64,6 +64,9 @@
       "fileMatch": "%APP_SETTINGS_HOME%/snippets/*.json",
       "url": "vscode://schemas/snippets"
     }, {
+      "fileMatch": "%APP_SETTINGS_HOME%/sync/snippets/preview/*.json",
+      "url": "vscode://schemas/snippets"
+    }, {
       "fileMatch": "**/*.code-snippets",
       "url": "vscode://schemas/global-snippets"
     }, {

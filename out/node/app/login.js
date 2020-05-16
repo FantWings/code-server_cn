@@ -56,6 +56,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+var limiter = __importStar(require("limiter"));
 var querystring = __importStar(require("querystring"));
 var http_1 = require("../../common/http");
 var http_2 = require("../http");
@@ -66,7 +67,9 @@ var util_1 = require("../util");
 var LoginHttpProvider = /** @class */ (function (_super) {
     __extends(LoginHttpProvider, _super);
     function LoginHttpProvider() {
-        return _super !== null && _super.apply(this, arguments) || this;
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.limiter = new RateLimiter();
+        return _this;
     }
     LoginHttpProvider.prototype.handleRequest = function (route, request) {
         return __awaiter(this, void 0, void 0, function () {
@@ -125,6 +128,9 @@ var LoginHttpProvider = /** @class */ (function (_super) {
                         _a.label = 1;
                     case 1:
                         _a.trys.push([1, 4, , 5]);
+                        if (!this.limiter.try()) {
+                            throw new Error("Login rate limited!");
+                        }
                         return [4 /*yield*/, this.getData(request)];
                     case 2:
                         data = _a.sent();
@@ -179,4 +185,19 @@ var LoginHttpProvider = /** @class */ (function (_super) {
     return LoginHttpProvider;
 }(http_2.HttpProvider));
 exports.LoginHttpProvider = LoginHttpProvider;
+// RateLimiter wraps around the limiter library for logins.
+// It allows 2 logins every minute and 12 logins every hour.
+var RateLimiter = /** @class */ (function () {
+    function RateLimiter() {
+        this.minuteLimiter = new limiter.RateLimiter(2, "minute");
+        this.hourLimiter = new limiter.RateLimiter(12, "hour");
+    }
+    RateLimiter.prototype.try = function () {
+        if (this.minuteLimiter.tryRemoveTokens(1)) {
+            return true;
+        }
+        return this.hourLimiter.tryRemoveTokens(1);
+    };
+    return RateLimiter;
+}());
 //# sourceMappingURL=login.js.map

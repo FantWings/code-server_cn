@@ -31,6 +31,9 @@
     "languages": [{
       "id": "ignore",
       "filenames": [".npmignore"]
+    }, {
+      "id": "properties",
+      "filenames": [".npmrc"]
     }],
     "views": {
       "explorer": [{
@@ -42,17 +45,11 @@
     "commands": [{
       "command": "npm.runScript",
       "title": "%command.run%",
-      "icon": {
-        "light": "resources/light/continue.svg",
-        "dark": "resources/dark/continue.svg"
-      }
+      "icon": "$(run)"
     }, {
       "command": "npm.debugScript",
       "title": "%command.debug%",
-      "icon": {
-        "light": "resources/light/debug.svg",
-        "dark": "resources/dark/debug.svg"
-      }
+      "icon": "$(debug)"
     }, {
       "command": "npm.openScript",
       "title": "%command.openScript%"
@@ -62,10 +59,7 @@
     }, {
       "command": "npm.refresh",
       "title": "%command.refresh%",
-      "icon": {
-        "light": "resources/light/refresh.svg",
-        "dark": "resources/dark/refresh.svg"
-      }
+      "icon": "$(refresh)"
     }, {
       "command": "npm.runSelectedScript",
       "title": "%command.runSelectedScript%"

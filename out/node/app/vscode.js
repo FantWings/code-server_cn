@@ -59,6 +59,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var logger_1 = require("@coder/logger");
 var cp = __importStar(require("child_process"));
 var crypto = __importStar(require("crypto"));
+var fs = __importStar(require("fs-extra"));
 var path = __importStar(require("path"));
 var http_1 = require("../../common/http");
 var util_1 = require("../../common/util");
@@ -295,19 +296,57 @@ var VscodeHttpProvider = /** @class */ (function (_super) {
      */
     VscodeHttpProvider.prototype.getFirstPath = function (startPaths) {
         return __awaiter(this, void 0, void 0, function () {
-            var i, startPath, url;
-            return __generator(this, function (_a) {
-                for (i = 0; i < startPaths.length; ++i) {
-                    startPath = startPaths[i];
-                    url = startPath && (typeof startPath.url === "string" ? [startPath.url] : startPath.url || []).find(function (p) { return !!p; });
-                    if (startPath && url) {
-                        return [2 /*return*/, {
-                                url: url,
-                                workspace: !!startPath.workspace,
-                            }];
-                    }
+            var isFile, i, startPath, url, _a, _b;
+            var _this = this;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
+                    case 0:
+                        isFile = function (path) { return __awaiter(_this, void 0, void 0, function () {
+                            var stat, error_2;
+                            return __generator(this, function (_a) {
+                                switch (_a.label) {
+                                    case 0:
+                                        _a.trys.push([0, 2, , 3]);
+                                        return [4 /*yield*/, fs.stat(path)];
+                                    case 1:
+                                        stat = _a.sent();
+                                        return [2 /*return*/, stat.isFile()];
+                                    case 2:
+                                        error_2 = _a.sent();
+                                        logger_1.logger.warn(error_2.message);
+                                        return [2 /*return*/, false];
+                                    case 3: return [2 /*return*/];
+                                }
+                            });
+                        }); };
+                        i = 0;
+                        _c.label = 1;
+                    case 1:
+                        if (!(i < startPaths.length)) return [3 /*break*/, 6];
+                        startPath = startPaths[i];
+                        url = startPath && (typeof startPath.url === "string" ? [startPath.url] : startPath.url || []).find(function (p) { return !!p; });
+                        if (!(startPath && url)) return [3 /*break*/, 5];
+                        _a = {
+                            url: url
+                        };
+                        if (!(typeof startPath.workspace !== "undefined")) return [3 /*break*/, 2];
+                        _b = startPath.workspace;
+                        return [3 /*break*/, 4];
+                    case 2: return [4 /*yield*/, isFile(url)];
+                    case 3:
+                        _b = _c.sent();
+                        _c.label = 4;
+                    case 4: return [2 /*return*/, (
+                        // The only time `workspace` is undefined is for the command-line
+                        // argument, in which case it's a path (not a URL) so we can stat it
+                        // without having to parse it.
+                        _a.workspace = _b,
+                            _a)];
+                    case 5:
+                        ++i;
+                        return [3 /*break*/, 1];
+                    case 6: return [2 /*return*/, undefined];
                 }
-                return [2 /*return*/, undefined];
             });
         });
     };

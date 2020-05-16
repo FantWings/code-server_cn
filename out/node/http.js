@@ -371,10 +371,10 @@ var HttpServer = /** @class */ (function () {
          */
         this.proxy = http_proxy_1.default.createProxyServer({});
         this.onRequest = function (request, response) { return __awaiter(_this, void 0, void 0, function () {
-            var route, write, payload, _a, error_1, e, code, payload;
+            var route, write, payload, _a, error_1, e, code, _b, _c;
             var _this = this;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
+            return __generator(this, function (_d) {
+                switch (_d.label) {
                     case 0:
                         this.heart.beat();
                         route = this.parseUrl(request);
@@ -410,16 +410,16 @@ var HttpServer = /** @class */ (function () {
                                 response.end();
                             }
                         };
-                        _b.label = 1;
+                        _d.label = 1;
                     case 1:
-                        _b.trys.push([1, 4, , 6]);
+                        _d.trys.push([1, 4, , 8]);
                         _a = this.maybeRedirect(request, route) ||
                             (route.provider.authenticated(request) && this.maybeProxy(request));
                         if (_a) return [3 /*break*/, 3];
                         return [4 /*yield*/, route.provider.handleRequest(route, request)];
                     case 2:
-                        _a = (_b.sent());
-                        _b.label = 3;
+                        _a = (_d.sent());
+                        _d.label = 3;
                     case 3:
                         payload = _a;
                         if (payload.proxy) {
@@ -428,9 +428,9 @@ var HttpServer = /** @class */ (function () {
                         else {
                             write(payload);
                         }
-                        return [3 /*break*/, 6];
+                        return [3 /*break*/, 8];
                     case 4:
-                        error_1 = _b.sent();
+                        error_1 = _d.sent();
                         e = error_1;
                         if (error_1.code === "ENOENT" || error_1.code === "EISDIR") {
                             e = new http_1.HttpError("Not found", http_1.HttpCode.NotFound);
@@ -440,12 +440,23 @@ var HttpServer = /** @class */ (function () {
                         if (code >= http_1.HttpCode.ServerError) {
                             logger_1.logger.error(error_1.stack);
                         }
-                        return [4 /*yield*/, route.provider.getErrorRoot(route, code, code, e.message)];
+                        if (!(request.headers["content-type"] === "application/json")) return [3 /*break*/, 5];
+                        write({
+                            code: code,
+                            content: {
+                                error: e.message,
+                            },
+                        });
+                        return [3 /*break*/, 7];
                     case 5:
-                        payload = _b.sent();
-                        write(__assign({ code: code }, payload));
-                        return [3 /*break*/, 6];
-                    case 6: return [2 /*return*/];
+                        _b = write;
+                        _c = [{ code: code }];
+                        return [4 /*yield*/, route.provider.getErrorRoot(route, code, code, e.message)];
+                    case 6:
+                        _b.apply(void 0, [__assign.apply(void 0, _c.concat([(_d.sent())]))]);
+                        _d.label = 7;
+                    case 7: return [3 /*break*/, 8];
+                    case 8: return [2 /*return*/];
                 }
             });
         }); };

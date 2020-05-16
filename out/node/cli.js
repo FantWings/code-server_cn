@@ -57,16 +57,16 @@ var options = {
     "cert-key": { type: "string", path: true, description: "Path to certificate key when using non-generated cert." },
     "disable-updates": { type: "boolean", description: "Disable automatic updates." },
     "disable-telemetry": { type: "boolean", description: "Disable telemetry." },
-    host: { type: "string", description: "Host for the HTTP server." },
     help: { type: "boolean", short: "h", description: "Show this output." },
     json: { type: "boolean" },
     open: { type: "boolean", description: "Open in browser on startup. Does not work remotely." },
-    port: { type: "number", description: "Port for the HTTP server." },
-    socket: { type: "string", path: true, description: "Path to a socket (host and port will be ignored)." },
+    "bind-addr": { type: "string", description: "Address to bind to in host:port." },
+    // These two have been deprecated by bindAddr.
+    host: { type: "string", description: "" },
+    port: { type: "number", description: "" },
+    socket: { type: "string", path: true, description: "Path to a socket (bind-addr will be ignored)." },
     version: { type: "boolean", short: "v", description: "Display version information." },
     _: { type: "string[]" },
-    "disable-ssh": { type: "boolean", description: "Disable the SSH server." },
-    "ssh-host-key": { type: "string", path: true, description: "SSH server host key." },
     "user-data-dir": { type: "string", path: true, description: "Path to the user data directory." },
     "extensions-dir": { type: "string", path: true, description: "Path to the extensions directory." },
     "builtin-extensions-dir": { type: "string", path: true },
@@ -112,11 +112,11 @@ exports.parse = function (argv) {
         // Options start with a dash and require a value if non-boolean.
         if (!ended && arg.startsWith("-")) {
             var key = void 0;
-            var value_1;
+            var value = void 0;
             if (arg.startsWith("--")) {
                 var split = arg.replace(/^--/, "").split("=", 2);
                 key = split[0];
-                value_1 = split[1];
+                value = split[1];
             }
             else {
                 var short_1 = arg.replace(/^-/, "");
@@ -138,25 +138,25 @@ exports.parse = function (argv) {
                 return out_i_1 = i, "continue";
             }
             // Might already have a value if it was the --long=value format.
-            if (typeof value_1 === "undefined") {
+            if (typeof value === "undefined") {
                 // A value is only valid if it doesn't look like an option.
-                value_1 = argv[i + 1] && !argv[i + 1].startsWith("-") ? argv[++i] : undefined;
+                value = argv[i + 1] && !argv[i + 1].startsWith("-") ? argv[++i] : undefined;
             }
-            if (!value_1 && option.type === OptionalString) {
+            if (!value && option.type === OptionalString) {
                 ;
-                args[key] = new OptionalString(value_1);
+                args[key] = new OptionalString(value);
                 return out_i_1 = i, "continue";
             }
-            else if (!value_1) {
+            else if (!value) {
                 throw new Error("--" + key + " requires a value");
             }
             if (option.path) {
-                value_1 = path.resolve(value_1);
+                value = path.resolve(value);
             }
             switch (option.type) {
                 case "string":
                     ;
-                    args[key] = value_1;
+                    args[key] = value;
                     break;
                 case "string[]":
                     if (!args[key]) {
@@ -164,25 +164,25 @@ exports.parse = function (argv) {
                         args[key] = [];
                     }
                     ;
-                    args[key].push(value_1);
+                    args[key].push(value);
                     break;
                 case "number":
                     ;
-                    args[key] = parseInt(value_1, 10);
+                    args[key] = parseInt(value, 10);
                     if (isNaN(args[key])) {
                         throw new Error("--" + key + " must be a number");
                     }
                     break;
                 case OptionalString:
                     ;
-                    args[key] = new OptionalString(value_1);
+                    args[key] = new OptionalString(value);
                     break;
                 default: {
-                    if (!Object.values(option.type).find(function (v) { return v === value_1; })) {
+                    if (!Object.values(option.type).includes(value)) {
                         throw new Error("--" + key + " valid values: [" + Object.values(option.type).join(", ") + "]");
                     }
                     ;
-                    args[key] = value_1;
+                    args[key] = value;
                     break;
                 }
             }
@@ -198,21 +198,24 @@ exports.parse = function (argv) {
         i = out_i_1;
     }
     logger_1.logger.debug("parsed command line", logger_1.field("args", args));
-    // Ensure the environment variable and the flag are synced up. The flag takes
-    // priority over the environment variable.
-    if (args.log === LogLevel.Trace || process.env.LOG_LEVEL === LogLevel.Trace || args.verbose) {
-        args.log = process.env.LOG_LEVEL = LogLevel.Trace;
-        args.verbose = true;
+    // --verbose takes priority over --log and --log takes priority over the
+    // environment variable.
+    if (args.verbose) {
+        args.log = LogLevel.Trace;
     }
-    else if (!args.log && process.env.LOG_LEVEL) {
+    else if (!args.log &&
+        process.env.LOG_LEVEL &&
+        Object.values(LogLevel).includes(process.env.LOG_LEVEL)) {
         args.log = process.env.LOG_LEVEL;
     }
-    else if (args.log) {
+    // Sync --log, --verbose, the environment variable, and logger level.
+    if (args.log) {
         process.env.LOG_LEVEL = args.log;
     }
     switch (args.log) {
         case LogLevel.Trace:
             logger_1.logger.level = logger_1.Level.Trace;
+            args.verbose = true;
             break;
         case LogLevel.Debug:
             logger_1.logger.level = logger_1.Level.Debug;

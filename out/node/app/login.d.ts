@@ -7,6 +7,7 @@ import { HttpProvider, HttpResponse, Route } from "../http";
 export declare class LoginHttpProvider extends HttpProvider {
     handleRequest(route: Route, request: http.IncomingMessage): Promise<HttpResponse>;
     getRoot(route: Route, error?: Error): Promise<HttpResponse>;
+    private readonly limiter;
     /**
      * Try logging in. On failure, show the login page with an error.
      */

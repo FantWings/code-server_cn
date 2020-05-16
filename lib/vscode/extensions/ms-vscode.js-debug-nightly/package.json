@@ -1,7 +1,7 @@
 {
   "name": "js-debug-nightly",
   "displayName": "JavaScript Debugger (Nightly)",
-  "version": "2020.2.2617",
+  "version": "2020.3.3117",
   "publisher": "ms-vscode",
   "author": {
     "name": "Microsoft Corporation"
@@ -45,7 +45,6 @@
     "execa": "^4.0.0",
     "glob-stream": "^6.1.0",
     "inversify": "^5.0.1",
-    "ip": "^1.1.5",
     "js-beautify": "^1.10.3",
     "jsonc-parser": "^2.2.0",
     "micromatch": "^4.0.2",
@@ -75,8 +74,8 @@
     "@types/express": "^4.17.0",
     "@types/glob": "^7.1.1",
     "@types/glob-stream": "^6.1.0",
+    "@types/gulp": "^4.0.6",
     "@types/http-server": "^0.10.0",
-    "@types/ip": "^1.1.0",
     "@types/js-beautify": "^1.8.1",
     "@types/json-schema": "^7.0.3",
     "@types/lodash": "^4.14.144",
@@ -92,7 +91,7 @@
     "@types/split2": "^2.1.6",
     "@types/stream-buffers": "^3.0.3",
     "@types/tmp": "^0.1.0",
-    "@types/ws": "^6.0.1",
+    "@types/ws": "^7.2.2",
     "@typescript-eslint/eslint-plugin": "^2.11.0",
     "@typescript-eslint/parser": "^2.11.0",
     "chai": "^4.2.0",
@@ -117,7 +116,7 @@
     "husky": "^3.1.0",
     "lodash": "^4.17.15",
     "merge2": "^1.3.0",
-    "minimist": "^1.2.0",
+    "minimist": "^1.2.2",
     "mkdirp": "^0.5.1",
     "mocha": "^6.2.1",
     "mocha-junit-reporter": "^1.23.1",
@@ -140,7 +139,7 @@
   },
   "main": "./src/extension.js",
   "enableProposedApi": true,
-  "activationEvents": ["onLanguage:json", "onDebugInitialConfigurations", "onDebugResolve:node", "onDebugResolve:extensionHost", "onDebugResolve:chrome", "onDebugResolve:pwa-node", "onDebugResolve:pwa-node-terminal", "onCommand:extension.pwa-node-debug.pickNodeProcess", "onCommand:extension.pwa-node-debug.prettyPrint", "onCommand:extension.pwa-node-debug.toggleSkippingFile", "onCommand:extension.pwa-node-debug.attachNodeProcess", "onCommand:extension.pwa-node-debug.startAutoAttach", "onCommand:extension.pwa-node-debug.startWithStopOnEntry", "onCommand:extension.pwa-node-debug.npmScript", "onCommand:extension.pwa-node-debug.createDebuggerTerminal", "onDebugResolve:pwa-chrome", "onCommand:extension.pwa-chrome-debug.addCustomBreakpoints", "onCommand:extension.pwa-chrome-debug.removeAllCustomBreakpoints", "onCommand:extension.pwa-chrome-debug.removeCustomBreakpoint", "onDebugResolve:pwa-msedge", "onDebugResolve:pwa-extensionHost"],
+  "activationEvents": ["onLanguage:json", "onDebugInitialConfigurations", "onDebugResolve:node", "onDebugResolve:extensionHost", "onDebugResolve:chrome", "onDebugResolve:pwa-node", "onDebugResolve:pwa-node-terminal", "onCommand:extension.js-debug.experimentEnlist", "onCommand:extension.pwa-node-debug.pickNodeProcess", "onCommand:extension.pwa-node-debug.prettyPrint", "onCommand:extension.pwa-node-debug.toggleSkippingFile", "onCommand:extension.pwa-node-debug.attachNodeProcess", "onCommand:extension.pwa-node-debug.startAutoAttach", "onCommand:extension.pwa-node-debug.startWithStopOnEntry", "onCommand:extension.pwa-node-debug.npmScript", "onCommand:extension.pwa-node-debug.createDebuggerTerminal", "onDebugResolve:pwa-chrome", "onCommand:extension.pwa-chrome-debug.addCustomBreakpoints", "onCommand:extension.pwa-chrome-debug.removeAllCustomBreakpoints", "onCommand:extension.pwa-chrome-debug.removeCustomBreakpoint", "onDebugResolve:pwa-msedge", "onDebugResolve:pwa-extensionHost", "onCommand:extension.pwa-node-debug.startProfile", "onCommand:extension.pwa-node-debug.stopProfile"],
   "extensionKind": ["workspace"],
   "contributes": {
     "views": {
@@ -150,6 +149,11 @@
         "when": "debugConfigurationType == 'pwa-chrome'"
       }]
     },
+    "viewsWelcome": [{
+      "view": "debug",
+      "contents": "%debug.terminal.welcome%",
+      "when": "debugStartLanguage == javascript || debugStartLanguage == typescript"
+    }],
     "commands": [{
       "command": "extension.pwa-node-debug.prettyPrint",
       "title": "%pretty.print.script%",
@@ -182,12 +186,30 @@
       "command": "extension.pwa-node-debug.createDebuggerTerminal",
       "title": "%debug.terminal.label%",
       "category": "Debug"
+    }, {
+      "command": "extension.pwa-node-debug.startProfile",
+      "title": "%profile.start%",
+      "category": "Debug",
+      "icon": "$(circle-outline)"
+    }, {
+      "command": "extension.pwa-node-debug.stopProfile",
+      "title": "%profile.stop%",
+      "category": "Debug",
+      "icon": "resources/dark/stop-profiling.svg"
     }],
     "menus": {
       "commandPalette": [{
         "command": "extension.pwa-node-debug.prettyPrint",
         "title": "%pretty.print.script%",
         "when": "inDebugMode && debugType == pwa-chrome && editorLangId == javascript"
+      }, {
+        "command": "extension.pwa-node-debug.startProfile",
+        "title": "%profile.start%",
+        "when": "inDebugMode && debugType == pwa-chrome"
+      }, {
+        "command": "extension.pwa-node-debug.stopProfile",
+        "title": "%profile.stop%",
+        "when": "inDebugMode && debugType == pwa-chrome"
       }],
       "debug/callstack/context": [{
         "command": "extension.pwa-node-debug.toggleSkippingFile",
@@ -196,7 +218,19 @@
       }, {
         "command": "extension.pwa-node-debug.toggleSkippingFile",
         "group": "navigation",
-        "when": "inDebugMode && debugType == pwa-chrome && callStackItemType == 'stackFrame'"
+        "when": "inDebugMode && debugType == pwa-chrome && callStackItemType == 'session'"
+      }, {
+        "command": "extension.pwa-node-debug.startProfile",
+        "group": "navigation",
+        "when": "debugType == pwa-chrome && !jsDebugIsProfiling"
+      }, {
+        "command": "extension.pwa-node-debug.stopProfile",
+        "group": "navigation",
+        "when": "debugType == pwa-chrome && jsDebugIsProfiling"
+      }],
+      "debug/toolBar": [{
+        "command": "extension.pwa-node-debug.stopProfile",
+        "when": "debugType == pwa-chrome && jsDebugIsProfiling"
       }],
       "view/title": [{
         "command": "extension.pwa-chrome-debug.addCustomBreakpoints",
@@ -447,7 +481,7 @@
                 "additionalProperties": false,
                 "properties": {
                   "console": {
-                    "description": "%trace.console.description%",
+                    "description": "%trace.stdio.description%",
                     "type": "boolean"
                   },
                   "level": {
@@ -457,6 +491,10 @@
                   "logFile": {
                     "description": "%trace.logFile.description%",
                     "type": ["string", "null"]
+                  },
+                  "stdio": {
+                    "description": "%trace.console.description%",
+                    "type": "boolean"
                   },
                   "tags": {
                     "description": "%trace.tags.description%",
@@ -706,7 +744,7 @@
                 "additionalProperties": false,
                 "properties": {
                   "console": {
-                    "description": "%trace.console.description%",
+                    "description": "%trace.stdio.description%",
                     "type": "boolean"
                   },
                   "level": {
@@ -716,6 +754,10 @@
                   "logFile": {
                     "description": "%trace.logFile.description%",
                     "type": ["string", "null"]
+                  },
+                  "stdio": {
+                    "description": "%trace.console.description%",
+                    "type": "boolean"
                   },
                   "tags": {
                     "description": "%trace.tags.description%",
@@ -997,7 +1039,7 @@
                 "additionalProperties": false,
                 "properties": {
                   "console": {
-                    "description": "%trace.console.description%",
+                    "description": "%trace.stdio.description%",
                     "type": "boolean"
                   },
                   "level": {
@@ -1007,6 +1049,10 @@
                   "logFile": {
                     "description": "%trace.logFile.description%",
                     "type": ["string", "null"]
+                  },
+                  "stdio": {
+                    "description": "%trace.console.description%",
+                    "type": "boolean"
                   },
                   "tags": {
                     "description": "%trace.tags.description%",
@@ -1033,7 +1079,7 @@
         "label": "%debug.terminal.snippet.label%"
       }],
       "label": "%debug.terminal.label%",
-      "languages": ["javascript", "typescript", "javascriptreact", "typescriptreact"],
+      "languages": [],
       "type": "pwa-node-terminal"
     }, {
       "aiKey": "AIF-d9b70cd4-b9f9-4d70-929b-a071c400b217",
@@ -1186,7 +1232,7 @@
                 "additionalProperties": false,
                 "properties": {
                   "console": {
-                    "description": "%trace.console.description%",
+                    "description": "%trace.stdio.description%",
                     "type": "boolean"
                   },
                   "level": {
@@ -1196,6 +1242,10 @@
                   "logFile": {
                     "description": "%trace.logFile.description%",
                     "type": ["string", "null"]
+                  },
+                  "stdio": {
+                    "description": "%trace.console.description%",
+                    "type": "boolean"
                   },
                   "tags": {
                     "description": "%trace.tags.description%",
@@ -1525,7 +1575,7 @@
                       "additionalProperties": false,
                       "properties": {
                         "console": {
-                          "description": "%trace.console.description%",
+                          "description": "%trace.stdio.description%",
                           "type": "boolean"
                         },
                         "level": {
@@ -1535,6 +1585,10 @@
                         "logFile": {
                           "description": "%trace.logFile.description%",
                           "type": ["string", "null"]
+                        },
+                        "stdio": {
+                          "description": "%trace.console.description%",
+                          "type": "boolean"
                         },
                         "tags": {
                           "description": "%trace.tags.description%",
@@ -1694,7 +1748,7 @@
                       "additionalProperties": false,
                       "properties": {
                         "console": {
-                          "description": "%trace.console.description%",
+                          "description": "%trace.stdio.description%",
                           "type": "boolean"
                         },
                         "level": {
@@ -1704,6 +1758,10 @@
                         "logFile": {
                           "description": "%trace.logFile.description%",
                           "type": ["string", "null"]
+                        },
+                        "stdio": {
+                          "description": "%trace.console.description%",
+                          "type": "boolean"
                         },
                         "tags": {
                           "description": "%trace.tags.description%",
@@ -1784,7 +1842,7 @@
                 "additionalProperties": false,
                 "properties": {
                   "console": {
-                    "description": "%trace.console.description%",
+                    "description": "%trace.stdio.description%",
                     "type": "boolean"
                   },
                   "level": {
@@ -1794,6 +1852,10 @@
                   "logFile": {
                     "description": "%trace.logFile.description%",
                     "type": ["string", "null"]
+                  },
+                  "stdio": {
+                    "description": "%trace.console.description%",
+                    "type": "boolean"
                   },
                   "tags": {
                     "description": "%trace.tags.description%",
@@ -1849,6 +1911,11 @@
               "default": "${workspaceFolder}/index.html",
               "description": "%browser.file.description%",
               "type": "string"
+            },
+            "includeDefaultArgs": {
+              "default": true,
+              "description": "%browser.includeDefaultArgs.description%",
+              "type": "boolean"
             },
             "inspectUri": {
               "default": null,
@@ -2145,7 +2212,7 @@
                       "additionalProperties": false,
                       "properties": {
                         "console": {
-                          "description": "%trace.console.description%",
+                          "description": "%trace.stdio.description%",
                           "type": "boolean"
                         },
                         "level": {
@@ -2155,6 +2222,10 @@
                         "logFile": {
                           "description": "%trace.logFile.description%",
                           "type": ["string", "null"]
+                        },
+                        "stdio": {
+                          "description": "%trace.console.description%",
+                          "type": "boolean"
                         },
                         "tags": {
                           "description": "%trace.tags.description%",
@@ -2314,7 +2385,7 @@
                       "additionalProperties": false,
                       "properties": {
                         "console": {
-                          "description": "%trace.console.description%",
+                          "description": "%trace.stdio.description%",
                           "type": "boolean"
                         },
                         "level": {
@@ -2324,6 +2395,10 @@
                         "logFile": {
                           "description": "%trace.logFile.description%",
                           "type": ["string", "null"]
+                        },
+                        "stdio": {
+                          "description": "%trace.console.description%",
+                          "type": "boolean"
                         },
                         "tags": {
                           "description": "%trace.tags.description%",
@@ -2404,7 +2479,7 @@
                 "additionalProperties": false,
                 "properties": {
                   "console": {
-                    "description": "%trace.console.description%",
+                    "description": "%trace.stdio.description%",
                     "type": "boolean"
                   },
                   "level": {
@@ -2414,6 +2489,10 @@
                   "logFile": {
                     "description": "%trace.logFile.description%",
                     "type": ["string", "null"]
+                  },
+                  "stdio": {
+                    "description": "%trace.console.description%",
+                    "type": "boolean"
                   },
                   "tags": {
                     "description": "%trace.tags.description%",
@@ -2770,7 +2849,7 @@
                       "additionalProperties": false,
                       "properties": {
                         "console": {
-                          "description": "%trace.console.description%",
+                          "description": "%trace.stdio.description%",
                           "type": "boolean"
                         },
                         "level": {
@@ -2780,6 +2859,10 @@
                         "logFile": {
                           "description": "%trace.logFile.description%",
                           "type": ["string", "null"]
+                        },
+                        "stdio": {
+                          "description": "%trace.console.description%",
+                          "type": "boolean"
                         },
                         "tags": {
                           "description": "%trace.tags.description%",
@@ -2939,7 +3022,7 @@
                       "additionalProperties": false,
                       "properties": {
                         "console": {
-                          "description": "%trace.console.description%",
+                          "description": "%trace.stdio.description%",
                           "type": "boolean"
                         },
                         "level": {
@@ -2949,6 +3032,10 @@
                         "logFile": {
                           "description": "%trace.logFile.description%",
                           "type": ["string", "null"]
+                        },
+                        "stdio": {
+                          "description": "%trace.console.description%",
+                          "type": "boolean"
                         },
                         "tags": {
                           "description": "%trace.tags.description%",
@@ -3029,7 +3116,7 @@
                 "additionalProperties": false,
                 "properties": {
                   "console": {
-                    "description": "%trace.console.description%",
+                    "description": "%trace.stdio.description%",
                     "type": "boolean"
                   },
                   "level": {
@@ -3039,6 +3126,10 @@
                   "logFile": {
                     "description": "%trace.logFile.description%",
                     "type": ["string", "null"]
+                  },
+                  "stdio": {
+                    "description": "%trace.console.description%",
+                    "type": "boolean"
                   },
                   "tags": {
                     "description": "%trace.tags.description%",
@@ -3099,6 +3190,11 @@
               "default": "${workspaceFolder}/index.html",
               "description": "%browser.file.description%",
               "type": "string"
+            },
+            "includeDefaultArgs": {
+              "default": true,
+              "description": "%browser.includeDefaultArgs.description%",
+              "type": "boolean"
             },
             "inspectUri": {
               "default": null,
@@ -3395,7 +3491,7 @@
                       "additionalProperties": false,
                       "properties": {
                         "console": {
-                          "description": "%trace.console.description%",
+                          "description": "%trace.stdio.description%",
                           "type": "boolean"
                         },
                         "level": {
@@ -3405,6 +3501,10 @@
                         "logFile": {
                           "description": "%trace.logFile.description%",
                           "type": ["string", "null"]
+                        },
+                        "stdio": {
+                          "description": "%trace.console.description%",
+                          "type": "boolean"
                         },
                         "tags": {
                           "description": "%trace.tags.description%",
@@ -3564,7 +3664,7 @@
                       "additionalProperties": false,
                       "properties": {
                         "console": {
-                          "description": "%trace.console.description%",
+                          "description": "%trace.stdio.description%",
                           "type": "boolean"
                         },
                         "level": {
@@ -3574,6 +3674,10 @@
                         "logFile": {
                           "description": "%trace.logFile.description%",
                           "type": ["string", "null"]
+                        },
+                        "stdio": {
+                          "description": "%trace.console.description%",
+                          "type": "boolean"
                         },
                         "tags": {
                           "description": "%trace.tags.description%",
@@ -3654,7 +3758,7 @@
                 "additionalProperties": false,
                 "properties": {
                   "console": {
-                    "description": "%trace.console.description%",
+                    "description": "%trace.stdio.description%",
                     "type": "boolean"
                   },
                   "level": {
@@ -3664,6 +3768,10 @@
                   "logFile": {
                     "description": "%trace.logFile.description%",
                     "type": ["string", "null"]
+                  },
+                  "stdio": {
+                    "description": "%trace.console.description%",
+                    "type": "boolean"
                   },
                   "tags": {
                     "description": "%trace.tags.description%",
@@ -3849,6 +3957,10 @@
                 "properties": {
                   "console": {
                     "type": "boolean",
+                    "description": "%trace.stdio.description%"
+                  },
+                  "stdio": {
+                    "type": "boolean",
                     "description": "%trace.console.description%"
                   },
                   "level": {
@@ -3918,6 +4030,660 @@
           "type": "boolean",
           "description": "%configuration.suggestPrettyPrinting%",
           "default": true
+        },
+        "debug.javascript.automaticallyTunnelRemoteServer": {
+          "type": "boolean",
+          "description": "%configuration.automaticallyTunnelRemoteServer%",
+          "default": true
+        },
+        "debug.javascript.debugByLinkOptions": {
+          "default": {},
+          "description": "%configuration.debugByLinkOptions%",
+          "oneOf": [{
+            "type": "boolean"
+          }, {
+            "type": "object",
+            "properties": {
+              "address": {
+                "type": "string",
+                "description": "%browser.address.description%",
+                "default": "127.0.0.1"
+              },
+              "port": {
+                "type": "number",
+                "description": "%browser.port.description%",
+                "default": 9222
+              },
+              "resolveSourceMapLocations": {
+                "type": ["array", "null"],
+                "description": "%node.resolveSourceMapLocations.description%",
+                "default": null,
+                "items": {
+                  "type": "string"
+                }
+              },
+              "outFiles": {
+                "type": ["array"],
+                "description": "%outFiles.description%",
+                "default": ["${workspaceFolder}/**/*.js", "!**/node_modules/**"],
+                "items": {
+                  "type": "string"
+                }
+              },
+              "pauseForSourceMap": {
+                "type": "boolean",
+                "markdownDescription": "%node.pauseForSourceMap.description%",
+                "default": false
+              },
+              "showAsyncStacks": {
+                "description": "%node.showAsyncStacks.description%",
+                "default": true,
+                "oneOf": [{
+                  "type": "boolean"
+                }, {
+                  "type": "object",
+                  "required": ["onAttach"],
+                  "properties": {
+                    "onAttach": {
+                      "type": "number",
+                      "default": 32
+                    }
+                  }
+                }, {
+                  "type": "object",
+                  "required": ["onceBreakpointResolved"],
+                  "properties": {
+                    "onceBreakpointResolved": {
+                      "type": "number",
+                      "default": 32
+                    }
+                  }
+                }]
+              },
+              "skipFiles": {
+                "type": "array",
+                "description": "%browser.skipFiles.description%",
+                "default": ["<node_internals>/**"]
+              },
+              "smartStep": {
+                "type": "boolean",
+                "description": "%smartStep.description%",
+                "default": true
+              },
+              "sourceMaps": {
+                "type": "boolean",
+                "description": "%browser.sourceMaps.description%",
+                "default": true
+              },
+              "sourceMapPathOverrides": {
+                "type": "object",
+                "description": "%node.sourceMapPathOverrides.description%",
+                "default": {
+                  "webpack://?:*/*": "${workspaceFolder}/*",
+                  "webpack:///./~/*": "${workspaceFolder}/node_modules/*",
+                  "meteor://💻app/*": "${workspaceFolder}/*"
+                }
+              },
+              "timeout": {
+                "type": "number",
+                "description": "%node.timeout.description%",
+                "default": 10000
+              },
+              "trace": {
+                "description": "%trace.description%",
+                "default": true,
+                "oneOf": [{
+                  "type": "boolean",
+                  "description": "%trace.boolean.description%"
+                }, {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "console": {
+                      "type": "boolean",
+                      "description": "%trace.stdio.description%"
+                    },
+                    "stdio": {
+                      "type": "boolean",
+                      "description": "%trace.console.description%"
+                    },
+                    "level": {
+                      "enum": ["fatal", "error", "warn", "info", "verbose"],
+                      "description": "%trace.level.description%"
+                    },
+                    "logFile": {
+                      "type": ["string", "null"],
+                      "description": "%trace.logFile.description%"
+                    },
+                    "tags": {
+                      "type": "array",
+                      "description": "%trace.tags.description%",
+                      "items": {
+                        "enum": ["cdp", "dap", "runtime"]
+                      }
+                    }
+                  }
+                }]
+              },
+              "outputCapture": {
+                "enum": ["console", "std"],
+                "description": "%node.launch.outputCapture.description%",
+                "default": "console"
+              },
+              "disableNetworkCache": {
+                "type": "boolean",
+                "description": "%browser.disableNetworkCache.description%",
+                "default": true
+              },
+              "pathMapping": {
+                "type": "object",
+                "description": "%browser.pathMapping.description%",
+                "default": {}
+              },
+              "webRoot": {
+                "type": "string",
+                "description": "%browser.webRoot.description%",
+                "default": "${workspaceFolder}"
+              },
+              "urlFilter": {
+                "type": "string",
+                "description": "%browser.urlFilter.description%",
+                "default": ""
+              },
+              "url": {
+                "type": "string",
+                "description": "%browser.url.description%",
+                "default": "http://localhost:8080"
+              },
+              "inspectUri": {
+                "type": ["string", "null"],
+                "description": "%browser.inspectUri.description%",
+                "default": null
+              },
+              "server": {
+                "oneOf": [{
+                  "type": "object",
+                  "description": "%browser.server.description%",
+                  "additionalProperties": false,
+                  "default": {
+                    "program": "node my-server.js"
+                  },
+                  "properties": {
+                    "address": {
+                      "type": "string",
+                      "description": "%node.address.description%",
+                      "default": "localhost"
+                    },
+                    "port": {
+                      "type": "number",
+                      "description": "%node.port.description%",
+                      "default": 9229
+                    },
+                    "resolveSourceMapLocations": {
+                      "type": ["array", "null"],
+                      "description": "%node.resolveSourceMapLocations.description%",
+                      "default": ["${workspaceFolder}/**", "!**/node_modules/**"],
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "outFiles": {
+                      "type": ["array"],
+                      "description": "%outFiles.description%",
+                      "default": ["${workspaceFolder}/**/*.js", "!**/node_modules/**"],
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "pauseForSourceMap": {
+                      "type": "boolean",
+                      "markdownDescription": "%node.pauseForSourceMap.description%",
+                      "default": false
+                    },
+                    "showAsyncStacks": {
+                      "description": "%node.showAsyncStacks.description%",
+                      "default": true,
+                      "oneOf": [{
+                        "type": "boolean"
+                      }, {
+                        "type": "object",
+                        "required": ["onAttach"],
+                        "properties": {
+                          "onAttach": {
+                            "type": "number",
+                            "default": 32
+                          }
+                        }
+                      }, {
+                        "type": "object",
+                        "required": ["onceBreakpointResolved"],
+                        "properties": {
+                          "onceBreakpointResolved": {
+                            "type": "number",
+                            "default": 32
+                          }
+                        }
+                      }]
+                    },
+                    "skipFiles": {
+                      "type": "array",
+                      "description": "%browser.skipFiles.description%",
+                      "default": ["<node_internals>/**"]
+                    },
+                    "smartStep": {
+                      "type": "boolean",
+                      "description": "%smartStep.description%",
+                      "default": true
+                    },
+                    "sourceMaps": {
+                      "type": "boolean",
+                      "description": "%browser.sourceMaps.description%",
+                      "default": true
+                    },
+                    "sourceMapPathOverrides": {
+                      "type": "object",
+                      "description": "%node.sourceMapPathOverrides.description%",
+                      "default": {
+                        "webpack://?:*/*": "${workspaceFolder}/*",
+                        "webpack:///./~/*": "${workspaceFolder}/node_modules/*",
+                        "meteor://💻app/*": "${workspaceFolder}/*"
+                      }
+                    },
+                    "timeout": {
+                      "type": "number",
+                      "description": "%node.timeout.description%",
+                      "default": 10000
+                    },
+                    "trace": {
+                      "description": "%trace.description%",
+                      "default": true,
+                      "oneOf": [{
+                        "type": "boolean",
+                        "description": "%trace.boolean.description%"
+                      }, {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "console": {
+                            "type": "boolean",
+                            "description": "%trace.stdio.description%"
+                          },
+                          "stdio": {
+                            "type": "boolean",
+                            "description": "%trace.console.description%"
+                          },
+                          "level": {
+                            "enum": ["fatal", "error", "warn", "info", "verbose"],
+                            "description": "%trace.level.description%"
+                          },
+                          "logFile": {
+                            "type": ["string", "null"],
+                            "description": "%trace.logFile.description%"
+                          },
+                          "tags": {
+                            "type": "array",
+                            "description": "%trace.tags.description%",
+                            "items": {
+                              "enum": ["cdp", "dap", "runtime"]
+                            }
+                          }
+                        }
+                      }]
+                    },
+                    "outputCapture": {
+                      "enum": ["console", "std"],
+                      "description": "%node.launch.outputCapture.description%",
+                      "default": "console"
+                    },
+                    "cwd": {
+                      "type": "string",
+                      "description": "%node.launch.cwd.description%",
+                      "default": "${workspaceFolder}"
+                    },
+                    "localRoot": {
+                      "type": ["string", "null"],
+                      "description": "%node.localRoot.description%",
+                      "default": null
+                    },
+                    "remoteRoot": {
+                      "type": ["string", "null"],
+                      "description": "%node.remoteRoot.description%",
+                      "default": null
+                    },
+                    "autoAttachChildProcesses": {
+                      "type": "boolean",
+                      "description": "%node.launch.autoAttachChildProcesses.description%",
+                      "default": true
+                    },
+                    "env": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": ["string", "null"]
+                      },
+                      "markdownDescription": "%node.launch.env.description%",
+                      "default": {}
+                    },
+                    "envFile": {
+                      "type": "string",
+                      "description": "%node.launch.envFile.description%",
+                      "default": "${workspaceFolder}/.env"
+                    },
+                    "program": {
+                      "type": "string",
+                      "description": "%node.launch.program.description%",
+                      "default": ""
+                    },
+                    "stopOnEntry": {
+                      "type": ["boolean", "string"],
+                      "description": "%node.stopOnEntry.description%",
+                      "default": true
+                    },
+                    "console": {
+                      "type": "string",
+                      "enum": ["internalConsole", "integratedTerminal", "externalTerminal"],
+                      "enumDescriptions": ["%node.launch.console.internalConsole.description%", "%node.launch.console.integratedTerminal.description%", "%node.launch.console.externalTerminal.description%"],
+                      "description": "%node.launch.console.description%",
+                      "default": "internalConsole"
+                    },
+                    "args": {
+                      "type": "array",
+                      "description": "%node.launch.args.description%",
+                      "items": {
+                        "type": "string"
+                      },
+                      "default": []
+                    },
+                    "restart": {
+                      "description": "%node.attach.restart.description%",
+                      "default": true,
+                      "oneOf": [{
+                        "type": "boolean"
+                      }, {
+                        "type": "object",
+                        "required": ["exponential"],
+                        "properties": {
+                          "exponential": {
+                            "type": "object",
+                            "properties": {
+                              "maxDelay": {
+                                "type": "number",
+                                "minimum": 0,
+                                "default": 10000
+                              },
+                              "maxAttempts": {
+                                "type": "number",
+                                "minimum": 0,
+                                "default": 10
+                              },
+                              "exponent": {
+                                "type": "number",
+                                "minimum": 1,
+                                "default": 2
+                              },
+                              "initialDelay": {
+                                "type": "number",
+                                "minimum": 0,
+                                "default": 128
+                              }
+                            }
+                          }
+                        }
+                      }, {
+                        "type": "object",
+                        "required": ["static"],
+                        "properties": {
+                          "static": {
+                            "type": "object",
+                            "properties": {
+                              "delay": {
+                                "type": "number",
+                                "minimum": 0,
+                                "default": 1000
+                              },
+                              "maxAttempts": {
+                                "type": "number",
+                                "minimum": 0,
+                                "default": 10
+                              }
+                            }
+                          }
+                        }
+                      }]
+                    },
+                    "runtimeExecutable": {
+                      "type": ["string", "null"],
+                      "markdownDescription": "%node.launch.runtimeExecutable.description%",
+                      "default": "node"
+                    },
+                    "runtimeVersion": {
+                      "type": "string",
+                      "markdownDescription": "%node.launch.runtimeVersion.description%",
+                      "default": "default"
+                    },
+                    "runtimeArgs": {
+                      "type": "array",
+                      "description": "%node.launch.runtimeArgs.description%",
+                      "items": {
+                        "type": "string"
+                      },
+                      "default": []
+                    }
+                  }
+                }, {
+                  "type": "object",
+                  "description": "%debug.terminal.label%",
+                  "additionalProperties": false,
+                  "default": {
+                    "program": "npm start"
+                  },
+                  "properties": {
+                    "address": {
+                      "type": "string",
+                      "description": "%node.address.description%",
+                      "default": "localhost"
+                    },
+                    "port": {
+                      "type": "number",
+                      "description": "%node.port.description%",
+                      "default": 9229
+                    },
+                    "resolveSourceMapLocations": {
+                      "type": ["array", "null"],
+                      "description": "%node.resolveSourceMapLocations.description%",
+                      "default": ["${workspaceFolder}/**", "!**/node_modules/**"],
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "outFiles": {
+                      "type": ["array"],
+                      "description": "%outFiles.description%",
+                      "default": ["${workspaceFolder}/**/*.js", "!**/node_modules/**"],
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "pauseForSourceMap": {
+                      "type": "boolean",
+                      "markdownDescription": "%node.pauseForSourceMap.description%",
+                      "default": false
+                    },
+                    "showAsyncStacks": {
+                      "description": "%node.showAsyncStacks.description%",
+                      "default": true,
+                      "oneOf": [{
+                        "type": "boolean"
+                      }, {
+                        "type": "object",
+                        "required": ["onAttach"],
+                        "properties": {
+                          "onAttach": {
+                            "type": "number",
+                            "default": 32
+                          }
+                        }
+                      }, {
+                        "type": "object",
+                        "required": ["onceBreakpointResolved"],
+                        "properties": {
+                          "onceBreakpointResolved": {
+                            "type": "number",
+                            "default": 32
+                          }
+                        }
+                      }]
+                    },
+                    "skipFiles": {
+                      "type": "array",
+                      "description": "%browser.skipFiles.description%",
+                      "default": ["<node_internals>/**"]
+                    },
+                    "smartStep": {
+                      "type": "boolean",
+                      "description": "%smartStep.description%",
+                      "default": true
+                    },
+                    "sourceMaps": {
+                      "type": "boolean",
+                      "description": "%browser.sourceMaps.description%",
+                      "default": true
+                    },
+                    "sourceMapPathOverrides": {
+                      "type": "object",
+                      "description": "%node.sourceMapPathOverrides.description%",
+                      "default": {
+                        "webpack://?:*/*": "${workspaceFolder}/*",
+                        "webpack:///./~/*": "${workspaceFolder}/node_modules/*",
+                        "meteor://💻app/*": "${workspaceFolder}/*"
+                      }
+                    },
+                    "timeout": {
+                      "type": "number",
+                      "description": "%node.timeout.description%",
+                      "default": 10000
+                    },
+                    "trace": {
+                      "description": "%trace.description%",
+                      "default": true,
+                      "oneOf": [{
+                        "type": "boolean",
+                        "description": "%trace.boolean.description%"
+                      }, {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "console": {
+                            "type": "boolean",
+                            "description": "%trace.stdio.description%"
+                          },
+                          "stdio": {
+                            "type": "boolean",
+                            "description": "%trace.console.description%"
+                          },
+                          "level": {
+                            "enum": ["fatal", "error", "warn", "info", "verbose"],
+                            "description": "%trace.level.description%"
+                          },
+                          "logFile": {
+                            "type": ["string", "null"],
+                            "description": "%trace.logFile.description%"
+                          },
+                          "tags": {
+                            "type": "array",
+                            "description": "%trace.tags.description%",
+                            "items": {
+                              "enum": ["cdp", "dap", "runtime"]
+                            }
+                          }
+                        }
+                      }]
+                    },
+                    "outputCapture": {
+                      "enum": ["console", "std"],
+                      "description": "%node.launch.outputCapture.description%",
+                      "default": "console"
+                    },
+                    "cwd": {
+                      "type": "string",
+                      "description": "%node.launch.cwd.description%",
+                      "default": "${workspaceFolder}"
+                    },
+                    "localRoot": {
+                      "type": ["string", "null"],
+                      "description": "%node.localRoot.description%",
+                      "default": null
+                    },
+                    "remoteRoot": {
+                      "type": ["string", "null"],
+                      "description": "%node.remoteRoot.description%",
+                      "default": null
+                    },
+                    "autoAttachChildProcesses": {
+                      "type": "boolean",
+                      "description": "%node.launch.autoAttachChildProcesses.description%",
+                      "default": true
+                    },
+                    "env": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": ["string", "null"]
+                      },
+                      "markdownDescription": "%node.launch.env.description%",
+                      "default": {}
+                    },
+                    "envFile": {
+                      "type": "string",
+                      "description": "%node.launch.envFile.description%",
+                      "default": "${workspaceFolder}/.env"
+                    },
+                    "command": {
+                      "type": ["string", "null"],
+                      "description": "%debug.terminal.program.description%",
+                      "default": "npm start"
+                    }
+                  }
+                }]
+              },
+              "file": {
+                "type": "string",
+                "description": "%browser.file.description%",
+                "default": "${workspaceFolder}/index.html"
+              },
+              "userDataDir": {
+                "type": ["string", "boolean"],
+                "description": "%browser.userDataDir.description%",
+                "default": true
+              },
+              "includeDefaultArgs": {
+                "type": "boolean",
+                "description": "%browser.includeDefaultArgs.description%",
+                "default": true
+              },
+              "runtimeExecutable": {
+                "type": ["string", "null"],
+                "description": "%browser.runtimeExecutable.description%",
+                "default": "stable"
+              },
+              "runtimeArgs": {
+                "type": "array",
+                "description": "%browser.runtimeArgs.description%",
+                "items": {
+                  "type": "string"
+                },
+                "default": []
+              },
+              "env": {
+                "type": "object",
+                "description": "%browser.env.description%",
+                "default": {}
+              },
+              "cwd": {
+                "type": "string",
+                "description": "%browser.cwd.description%",
+                "default": null
+              }
+            }
+          }]
         }
       }
     }

@@ -148,7 +148,7 @@ var UpdateHttpProvider = /** @class */ (function (_super) {
             });
         });
     };
-    UpdateHttpProvider.prototype.getRoot = function (route, request, appliedUpdate, error) {
+    UpdateHttpProvider.prototype.getRoot = function (route, request, errorOrUpdate) {
         return __awaiter(this, void 0, void 0, function () {
             var update, response, _a, _b, _c, _d, _e;
             return __generator(this, function (_f) {
@@ -174,8 +174,8 @@ var UpdateHttpProvider = /** @class */ (function (_super) {
                         _a = response;
                         _c = (_b = response.content).replace;
                         _d = [/{{UPDATE_STATUS}}/];
-                        if (!appliedUpdate) return [3 /*break*/, 4];
-                        _e = "Updated to " + appliedUpdate;
+                        if (!(errorOrUpdate && !(errorOrUpdate instanceof Error))) return [3 /*break*/, 4];
+                        _e = "Updated to " + errorOrUpdate.version;
                         return [3 /*break*/, 6];
                     case 4: return [4 /*yield*/, this.getUpdateHtml()];
                     case 5:
@@ -183,7 +183,7 @@ var UpdateHttpProvider = /** @class */ (function (_super) {
                         _f.label = 6;
                     case 6:
                         _a.content = _c.apply(_b, _d.concat([_e]))
-                            .replace(/{{ERROR}}/, error ? "<div class=\"error\">" + error.message + "</div>" : "");
+                            .replace(/{{ERROR}}/, errorOrUpdate instanceof Error ? "<div class=\"error\">" + errorOrUpdate.message + "</div>" : "");
                         return [2 /*return*/, this.replaceTemplates(route, response)];
                 }
             });
@@ -307,11 +307,16 @@ var UpdateHttpProvider = /** @class */ (function (_super) {
                         return [4 /*yield*/, this.downloadAndApplyUpdate(update)];
                     case 2:
                         _a.sent();
-                        return [2 /*return*/, this.getRoot(route, request, update.version)];
+                        return [2 /*return*/, this.getRoot(route, request, update)];
                     case 3: return [2 /*return*/, this.getRoot(route, request)];
                     case 4:
                         error_2 = _a.sent();
-                        return [2 /*return*/, this.getRoot(route, request, undefined, error_2)];
+                        // For JSON requests propagate the error. Otherwise catch it so we can
+                        // show the error inline with the update button instead of an error page.
+                        if (request.headers["content-type"] === "application/json") {
+                            throw error_2;
+                        }
+                        return [2 /*return*/, this.getRoot(route, error_2)];
                     case 5: return [2 /*return*/];
                 }
             });
@@ -536,7 +541,7 @@ var UpdateHttpProvider = /** @class */ (function (_super) {
                                     return request(url.resolve(uri, response.headers.location));
                                 }
                                 if (!response.statusCode || response.statusCode < 200 || response.statusCode >= 400) {
-                                    return reject(new Error("" + (response.statusCode || "500")));
+                                    return reject(new Error(uri + ": " + (response.statusCode || "500")));
                                 }
                                 resolve(response);
                             });

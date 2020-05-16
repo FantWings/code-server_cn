@@ -50,7 +50,7 @@ export declare class UpdateHttpProvider extends HttpProvider {
      */
     settings?: SettingsProvider<UpdateSettings>);
     handleRequest(route: Route, request: http.IncomingMessage): Promise<HttpResponse>;
-    getRoot(route: Route, request: http.IncomingMessage, appliedUpdate?: string, error?: Error): Promise<HttpResponse>;
+    getRoot(route: Route, request: http.IncomingMessage, errorOrUpdate?: Update | Error): Promise<HttpResponse>;
     /**
      * Query for and return the latest update.
      */

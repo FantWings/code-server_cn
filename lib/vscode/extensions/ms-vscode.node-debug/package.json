@@ -1,7 +1,7 @@
 {
 	"name": "node-debug",
 	"displayName": "Node Debug (legacy)",
-	"version": "1.43.2",
+	"version": "1.44.5",
 	"publisher": "ms-vscode",
 	"description": "%extension.description%",
 	"icon": "images/node-debug-icon.png",
@@ -12,7 +12,6 @@
 	"license": "MIT",
 	"private": true,
 	"scripts": {
-		"postinstall": "node ./node_modules/vscode/bin/install",
 		"build": "gulp build",
 		"watch": "gulp watch",
 		"test": "gulp compile && mocha --timeout 10000 -u tdd ./out/tests/",
@@ -34,7 +33,7 @@
 		"minimatch": "3.0.4",
 		"request-light": "0.2.5",
 		"source-map": "0.6.1",
-		"vscode-debugadapter": "1.39.0",
+		"vscode-debugadapter": "1.40.0",
 		"vscode-nls": "4.1.1"
 	},
 	"repository": {
@@ -47,6 +46,7 @@
 	"devDependencies": {
 		"@types/mocha": "7.0.1",
 		"@types/node": "^12.7.3",
+		"@types/vscode": "^1.42.0",
 		"copy-webpack-plugin": "^5.1.1",
 		"del": "5.1.0",
 		"gulp": "4.0.2",
@@ -63,9 +63,8 @@
 		"tsutils": "3.17.1",
 		"typescript": "~3.7.2",
 		"vsce": "^1.73.0",
-		"vscode": "1.1.36",
-		"vscode-debugadapter-testsupport": "1.40.2",
-		"vscode-debugprotocol": "1.39.0",
+		"vscode-debugadapter-testsupport": "1.40.3",
+		"vscode-debugprotocol": "1.40.0",
 		"vscode-nls-dev": "3.3.1",
 		"webpack": "~4.41.2",
 		"webpack-cli": "~3.3.10"
@@ -85,6 +84,11 @@
 				"debug.node.useV3": {
 					"type": "boolean",
 					"description": "%debug.node.useV3.description%",
+					"default": false
+				},
+				"debug.extensionHost.useV3": {
+					"type": "boolean",
+					"description": "%debug.extensionHost.useV3.description%",
 					"default": false
 				}
 			}
