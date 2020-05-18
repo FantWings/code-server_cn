@@ -14,10 +14,11 @@ export declare enum LogLevel {
 export declare class OptionalString extends Optional<string> {
 }
 export interface Args extends VsArgs {
+    readonly config?: string;
     readonly auth?: AuthType;
+    readonly password?: string;
     readonly cert?: OptionalString;
     readonly "cert-key"?: string;
-    readonly "disable-updates"?: boolean;
     readonly "disable-telemetry"?: boolean;
     readonly help?: boolean;
     readonly host?: string;
@@ -38,4 +39,13 @@ export interface Args extends VsArgs {
     readonly _: string[];
 }
 export declare const optionDescriptions: () => string[];
-export declare const parse: (argv: string[]) => Args;
+export declare const parse: (argv: string[], opts?: {
+    configFile: string;
+} | undefined) => Promise<Args>;
+/**
+ * Reads the code-server yaml config file and returns it as Args.
+ *
+ * @param configPath Read the config from configPath instead of $CODE_SERVER_CONFIG or the default.
+ */
+export declare function readConfigFile(configPath?: string): Promise<Args>;
+export declare function bindAddrFromAllSources(cliArgs: Args, configArgs: Args): [string, number];

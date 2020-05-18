@@ -503,7 +503,7 @@ var HttpServer = /** @class */ (function () {
             });
         }); };
         this.proxyDomains = new Set((options.proxyDomains || []).map(function (d) { return d.replace(/^\*\./, ""); }));
-        this.heart = new Heart(path.join(util_2.xdgLocalDir, "heartbeat"), function () { return __awaiter(_this, void 0, void 0, function () {
+        this.heart = new Heart(path.join(util_2.paths.data, "heartbeat"), function () { return __awaiter(_this, void 0, void 0, function () {
             var connections;
             return __generator(this, function (_a) {
                 switch (_a.label) {

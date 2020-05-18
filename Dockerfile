@@ -37,7 +37,7 @@ RUN sudo mkdir /app
 COPY . /app
 
 #Create Soft Link && Setup local language && Setup TimeZone
-RUN sudo ln -s /app/code-server /usr/local/bin/code-server && \
+RUN sudo ln -s /app/bin/code-server /usr/local/bin/code-server && \
 	sudo ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
 	mkdir -p /home/coder/.local/share/code-server/User && \
 	cp /app/config/locale.json ${CODE_SERVER_HOME}/User/locale.json && \
@@ -60,8 +60,5 @@ RUN code-server --install-extension donjayamanne.python-extension-pack && \
 	
 #Set DataVolume incase they lose ther shit.
 VOLUME [ "/home/coder" ]
-
-#Set UserBin incase they lose ther Apps.
-VOLUME [ "/usr/local" ]
 
 ENTRYPOINT ["code-server", "--host", "0.0.0.0"]

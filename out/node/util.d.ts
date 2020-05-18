@@ -1,5 +1,16 @@
 export declare const tmpdir: string;
-export declare const xdgLocalDir: string;
+interface Paths {
+    data: string;
+    config: string;
+}
+export declare const paths: Paths;
+/**
+ * humanPath replaces the home directory in p with ~.
+ * Makes it more readable.
+ *
+ * @param p
+ */
+export declare function humanPath(p?: string): string;
 export declare const generateCertificate: () => Promise<{
     cert: string;
     certKey: string;
@@ -26,3 +37,4 @@ export declare const isObject: <T extends object>(obj: T) => obj is T;
  * recursively merged while all other properties are just overwritten.
  */
 export declare function extend<A, B>(a: A, b: B): A & B;
+export {};

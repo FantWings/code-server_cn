@@ -1,1 +1,1 @@
-{"extension":{"messages":["Successfully signed out.","Successfully signed out.","Successfully signed out."],"keys":["signedOut","signedOut","signedOut"]},"keychain":{"messages":["Troubleshooting Guide","Writing login information to the keychain failed with error '{0}'."],"keys":["troubleshooting","keychainWriteError"]}}
+{"keychain":{"messages":["Troubleshooting Guide","Writing login information to the keychain failed with error '{0}'."],"keys":["troubleshooting","keychainWriteError"]}}

@@ -49,6 +49,9 @@ var __importStar = (this && this.__importStar) || function (mod) {
     result["default"] = mod;
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 var cp = __importStar(require("child_process"));
 var crypto = __importStar(require("crypto"));
@@ -56,18 +59,46 @@ var fs = __importStar(require("fs-extra"));
 var os = __importStar(require("os"));
 var path = __importStar(require("path"));
 var util = __importStar(require("util"));
+var env_paths_1 = __importDefault(require("env-paths"));
+var xdg_basedir_1 = __importDefault(require("xdg-basedir"));
 exports.tmpdir = path.join(os.tmpdir(), "code-server");
-var getXdgDataDir = function () {
-    switch (process.platform) {
-        case "win32":
-            return path.join(process.env.XDG_DATA_HOME || path.join(os.homedir(), "AppData/Local"), "code-server/Data");
-        case "darwin":
-            return path.join(process.env.XDG_DATA_HOME || path.join(os.homedir(), "Library/Application Support"), "code-server");
-        default:
-            return path.join(process.env.XDG_DATA_HOME || path.join(os.homedir(), ".local/share"), "code-server");
+exports.paths = getEnvPaths();
+/**
+ * Gets the config and data paths for the current platform/configuration.
+ * On MacOS this function gets the standard XDG directories instead of using the native macOS
+ * ones. Most CLIs do this as in practice only GUI apps use the standard macOS directories.
+ */
+function getEnvPaths() {
+    var paths;
+    if (process.platform === "win32") {
+        paths = env_paths_1.default("code-server", {
+            suffix: "",
+        });
     }
-};
-exports.xdgLocalDir = getXdgDataDir();
+    else {
+        if (xdg_basedir_1.default.data === undefined || xdg_basedir_1.default.config === undefined) {
+            throw new Error("No home folder?");
+        }
+        paths = {
+            data: path.join(xdg_basedir_1.default.data, "code-server"),
+            config: path.join(xdg_basedir_1.default.config, "code-server"),
+        };
+    }
+    return paths;
+}
+/**
+ * humanPath replaces the home directory in p with ~.
+ * Makes it more readable.
+ *
+ * @param p
+ */
+function humanPath(p) {
+    if (!p) {
+        return "";
+    }
+    return p.replace(os.homedir(), "~");
+}
+exports.humanPath = humanPath;
 exports.generateCertificate = function () { return __awaiter(void 0, void 0, void 0, function () {
     var paths, checks, pem_1, certs;
     return __generator(this, function (_a) {
@@ -117,10 +148,7 @@ exports.generatePassword = function (length) {
     });
 };
 exports.hash = function (str) {
-    return crypto
-        .createHash("sha256")
-        .update(str)
-        .digest("hex");
+    return crypto.createHash("sha256").update(str).digest("hex");
 };
 var mimeTypes = {
     ".aac": "audio/x-aac",
@@ -186,11 +214,7 @@ exports.isWsl = function () { return __awaiter(void 0, void 0, void 0, function 
     return __generator(this, function (_b) {
         switch (_b.label) {
             case 0:
-                _a = (process.platform === "linux" &&
-                    os
-                        .release()
-                        .toLowerCase()
-                        .indexOf("microsoft") !== -1);
+                _a = (process.platform === "linux" && os.release().toLowerCase().indexOf("microsoft") !== -1);
                 if (_a) return [3 /*break*/, 2];
                 return [4 /*yield*/, fs.readFile("/proc/version", "utf8")];
             case 1:

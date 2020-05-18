@@ -66,8 +66,10 @@ var util_1 = require("../util");
  */
 var LoginHttpProvider = /** @class */ (function (_super) {
     __extends(LoginHttpProvider, _super);
-    function LoginHttpProvider() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
+    function LoginHttpProvider(options, configFile, envPassword) {
+        var _this = _super.call(this, options) || this;
+        _this.configFile = configFile;
+        _this.envPassword = envPassword;
         _this.limiter = new RateLimiter();
         return _this;
     }
@@ -100,13 +102,18 @@ var LoginHttpProvider = /** @class */ (function (_super) {
     };
     LoginHttpProvider.prototype.getRoot = function (route, error) {
         return __awaiter(this, void 0, void 0, function () {
-            var response;
+            var response, passwordMsg;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0: return [4 /*yield*/, this.getUtf8Resource(this.rootPath, "src/browser/pages/login.html")];
                     case 1:
                         response = _a.sent();
                         response.content = response.content.replace(/{{ERROR}}/, error ? "<div class=\"error\">" + error.message + "</div>" : "");
+                        passwordMsg = "Check the config file at " + util_1.humanPath(this.configFile) + " for the password.";
+                        if (this.envPassword) {
+                            passwordMsg = "Password was set from $PASSWORD.";
+                        }
+                        response.content = response.content.replace(/{{PASSWORD_MSG}}/g, passwordMsg);
                         return [2 /*return*/, this.replaceTemplates(route, response)];
                 }
             });

@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 "use strict";
 var __assign = (this && this.__assign) || function () {
     __assign = Object.assign || function(t) {
@@ -83,77 +84,73 @@ catch (error) {
 }
 var version = pkg.version || "development";
 var commit = pkg.commit || "development";
-var main = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var auth, originalPassword, _a, _b, host, port, u, options, _c, _d, httpServer, vscode, api, update, serverAddress, openAddress;
-    return __generator(this, function (_e) {
-        switch (_e.label) {
-            case 0:
-                auth = args.auth || http_1.AuthType.Password;
-                _a = auth === http_1.AuthType.Password;
-                if (!_a) return [3 /*break*/, 3];
-                _b = process.env.PASSWORD;
-                if (_b) return [3 /*break*/, 2];
-                return [4 /*yield*/, util_1.generatePassword()];
+var main = function (cliArgs) { return __awaiter(void 0, void 0, void 0, function () {
+    var configArgs, args, envPassword, password, _a, host, port, options, _b, _c, httpServer, vscode, api, update, serverAddress, openAddress;
+    return __generator(this, function (_d) {
+        switch (_d.label) {
+            case 0: return [4 /*yield*/, cli_1.readConfigFile(cliArgs.config)
+                // This prioritizes the flags set in args over the ones in the config file.
+            ];
             case 1:
-                _b = (_e.sent());
-                _e.label = 2;
-            case 2:
-                _a = (_b);
-                _e.label = 3;
-            case 3:
-                originalPassword = _a;
-                host = args.host;
-                port = args.port;
-                if (args["bind-addr"] !== undefined) {
-                    u = new URL("http://" + args["bind-addr"]);
-                    host = u.hostname;
-                    port = parseInt(u.port, 10);
+                configArgs = _d.sent();
+                args = Object.assign(configArgs, cliArgs);
+                if (!args.auth) {
+                    args = __assign(__assign({}, args), { auth: http_1.AuthType.Password });
                 }
-                _c = [{ auth: auth,
-                        commit: commit, host: host || (args.auth === http_1.AuthType.Password && args.cert !== undefined ? "0.0.0.0" : "localhost"), password: originalPassword ? util_1.hash(originalPassword) : undefined, port: port !== undefined ? port : process.env.PORT ? parseInt(process.env.PORT, 10) : 8080, proxyDomains: args["proxy-domain"], socket: args.socket }];
-                if (!(args.cert && !args.cert.value)) return [3 /*break*/, 5];
+                logger_1.logger.info("Using user-data-dir " + util_1.humanPath(args["user-data-dir"]));
+                logger_1.logger.trace("Using extensions-dir " + util_1.humanPath(args["extensions-dir"]));
+                envPassword = !!process.env.PASSWORD;
+                password = args.auth === http_1.AuthType.Password && (process.env.PASSWORD || args.password);
+                if (args.auth === http_1.AuthType.Password && !password) {
+                    throw new Error("Please pass in a password via the config file or $PASSWORD");
+                }
+                _a = cli_1.bindAddrFromAllSources(cliArgs, configArgs), host = _a[0], port = _a[1];
+                _b = [{ auth: args.auth, commit: commit, host: host, 
+                        // The hash does not add any actual security but we do it for obfuscation purposes.
+                        password: password ? util_1.hash(password) : undefined, port: port, proxyDomains: args["proxy-domain"], socket: args.socket }];
+                if (!(args.cert && !args.cert.value)) return [3 /*break*/, 3];
                 return [4 /*yield*/, util_1.generateCertificate()];
-            case 4:
-                _d = _e.sent();
-                return [3 /*break*/, 6];
-            case 5:
-                _d = {
+            case 2:
+                _c = _d.sent();
+                return [3 /*break*/, 4];
+            case 3:
+                _c = {
                     cert: args.cert && args.cert.value,
                     certKey: args["cert-key"],
                 };
-                _e.label = 6;
-            case 6:
-                options = __assign.apply(void 0, _c.concat([(_d)]));
+                _d.label = 4;
+            case 4:
+                options = __assign.apply(void 0, _b.concat([(_c)]));
                 if (options.cert && !options.certKey) {
                     throw new Error("--cert-key is missing");
                 }
                 httpServer = new http_1.HttpServer(options);
                 vscode = httpServer.registerHttpProvider("/", vscode_1.VscodeHttpProvider, args);
                 api = httpServer.registerHttpProvider("/api", api_1.ApiHttpProvider, httpServer, vscode, args["user-data-dir"]);
-                update = httpServer.registerHttpProvider("/update", update_1.UpdateHttpProvider, !args["disable-updates"]);
+                update = httpServer.registerHttpProvider("/update", update_1.UpdateHttpProvider, false);
                 httpServer.registerHttpProvider("/proxy", proxy_1.ProxyHttpProvider);
-                httpServer.registerHttpProvider("/login", login_1.LoginHttpProvider);
+                httpServer.registerHttpProvider("/login", login_1.LoginHttpProvider, args.config, envPassword);
                 httpServer.registerHttpProvider("/static", static_1.StaticHttpProvider);
                 httpServer.registerHttpProvider("/dashboard", dashboard_1.DashboardHttpProvider, api, update);
                 wrapper_1.ipcMain().onDispose(function () { return httpServer.dispose(); });
                 logger_1.logger.info("code-server " + version + " " + commit);
                 return [4 /*yield*/, httpServer.listen()];
-            case 7:
-                serverAddress = _e.sent();
+            case 5:
+                serverAddress = _d.sent();
                 logger_1.logger.info("HTTP server listening on " + serverAddress);
-                if (auth === http_1.AuthType.Password && !process.env.PASSWORD) {
-                    logger_1.logger.info("  - Password is " + originalPassword);
-                    logger_1.logger.info("    - To use your own password set the PASSWORD environment variable");
-                    if (!args.auth) {
-                        logger_1.logger.info("    - To disable use `--auth none`");
+                if (args.auth === http_1.AuthType.Password) {
+                    if (envPassword) {
+                        logger_1.logger.info("    - Using password from $PASSWORD");
                     }
-                }
-                else if (auth === http_1.AuthType.Password) {
-                    logger_1.logger.info("  - Using custom password for authentication");
+                    else {
+                        logger_1.logger.info("    - Using password from " + util_1.humanPath(args.config));
+                    }
+                    logger_1.logger.info("    - To disable use `--auth none`");
                 }
                 else {
                     logger_1.logger.info("  - No authentication");
                 }
+                delete process.env.PASSWORD;
                 if (httpServer.protocol === "https") {
                     logger_1.logger.info(args.cert && args.cert.value
                         ? "  - Using provided certificate and key for HTTPS"
@@ -166,72 +163,94 @@ var main = function (args) { return __awaiter(void 0, void 0, void 0, function (
                     logger_1.logger.info("  - Proxying the following domain" + (httpServer.proxyDomains.size === 1 ? "" : "s") + ":");
                     httpServer.proxyDomains.forEach(function (domain) { return logger_1.logger.info("    - *." + domain); });
                 }
-                logger_1.logger.info("Automatic updates are " + (update.enabled ? "enabled" : "disabled"));
-                if (!(serverAddress && !options.socket && args.open)) return [3 /*break*/, 9];
+                if (!(serverAddress && !options.socket && args.open)) return [3 /*break*/, 7];
                 openAddress = serverAddress.replace(/:\/\/0.0.0.0/, "://localhost");
                 return [4 /*yield*/, util_1.open(openAddress).catch(console.error)];
-            case 8:
-                _e.sent();
+            case 6:
+                _d.sent();
                 logger_1.logger.info("Opened " + openAddress);
-                _e.label = 9;
-            case 9: return [2 /*return*/];
+                _d.label = 7;
+            case 7: return [2 /*return*/];
         }
     });
 }); };
-var tryParse = function () {
-    try {
-        return cli_1.parse(process.argv.slice(2));
-    }
-    catch (error) {
-        console.error(error.message);
-        process.exit(1);
-    }
-};
-var args = tryParse();
-if (args.help) {
-    console.log("code-server", version, commit);
-    console.log("");
-    console.log("Usage: code-server [options] [path]");
-    console.log("");
-    console.log("Options");
-    cli_1.optionDescriptions().forEach(function (description) {
-        console.log("", description);
-    });
-}
-else if (args.version) {
-    if (args.json) {
-        console.log({
-            codeServer: version,
-            commit: commit,
-            vscode: require("../../lib/vscode/package.json").version,
+function entry() {
+    return __awaiter(this, void 0, void 0, function () {
+        var tryParse, args, vscode_2;
+        var _this = this;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    tryParse = function () { return __awaiter(_this, void 0, void 0, function () {
+                        var error_1;
+                        return __generator(this, function (_a) {
+                            switch (_a.label) {
+                                case 0:
+                                    _a.trys.push([0, 2, , 3]);
+                                    return [4 /*yield*/, cli_1.parse(process.argv.slice(2))];
+                                case 1: return [2 /*return*/, _a.sent()];
+                                case 2:
+                                    error_1 = _a.sent();
+                                    console.error(error_1.message);
+                                    process.exit(1);
+                                    return [3 /*break*/, 3];
+                                case 3: return [2 /*return*/];
+                            }
+                        });
+                    }); };
+                    return [4 /*yield*/, tryParse()];
+                case 1:
+                    args = _a.sent();
+                    if (args.help) {
+                        console.log("code-server", version, commit);
+                        console.log("");
+                        console.log("Usage: code-server [options] [path]");
+                        console.log("");
+                        console.log("Options");
+                        cli_1.optionDescriptions().forEach(function (description) {
+                            console.log("", description);
+                        });
+                    }
+                    else if (args.version) {
+                        if (args.json) {
+                            console.log({
+                                codeServer: version,
+                                commit: commit,
+                                vscode: require("../../lib/vscode/package.json").version,
+                            });
+                        }
+                        else {
+                            console.log(version, commit);
+                        }
+                        process.exit(0);
+                    }
+                    else if (args["list-extensions"] || args["install-extension"] || args["uninstall-extension"]) {
+                        logger_1.logger.debug("forking vs code cli...");
+                        vscode_2 = cp.fork(path.resolve(__dirname, "../../lib/vscode/out/vs/server/fork"), [], {
+                            env: __assign(__assign({}, process.env), { CODE_SERVER_PARENT_PID: process.pid.toString() }),
+                        });
+                        vscode_2.once("message", function (message) {
+                            logger_1.logger.debug("Got message from VS Code", logger_1.field("message", message));
+                            if (message.type !== "ready") {
+                                logger_1.logger.error("Unexpected response waiting for ready response");
+                                process.exit(1);
+                            }
+                            var send = { type: "cli", args: args };
+                            vscode_2.send(send);
+                        });
+                        vscode_2.once("error", function (error) {
+                            logger_1.logger.error(error.message);
+                            process.exit(1);
+                        });
+                        vscode_2.on("exit", function (code) { return process.exit(code || 0); });
+                    }
+                    else {
+                        wrapper_1.wrap(function () { return main(args); });
+                    }
+                    return [2 /*return*/];
+            }
         });
-    }
-    else {
-        console.log(version, commit);
-    }
-    process.exit(0);
-}
-else if (args["list-extensions"] || args["install-extension"] || args["uninstall-extension"]) {
-    logger_1.logger.debug("forking vs code cli...");
-    var vscode_2 = cp.fork(path.resolve(__dirname, "../../lib/vscode/out/vs/server/fork"), [], {
-        env: __assign(__assign({}, process.env), { CODE_SERVER_PARENT_PID: process.pid.toString() }),
     });
-    vscode_2.once("message", function (message) {
-        logger_1.logger.debug("Got message from VS Code", logger_1.field("message", message));
-        if (message.type !== "ready") {
-            logger_1.logger.error("Unexpected response waiting for ready response");
-            process.exit(1);
-        }
-        var send = { type: "cli", args: args };
-        vscode_2.send(send);
-    });
-    vscode_2.once("error", function (error) {
-        logger_1.logger.error(error.message);
-        process.exit(1);
-    });
-    vscode_2.on("exit", function (code) { return process.exit(code || 0); });
 }
-else {
-    wrapper_1.wrap(function () { return main(args); });
-}
+entry();
 //# sourceMappingURL=entry.js.map

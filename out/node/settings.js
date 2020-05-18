@@ -115,5 +115,5 @@ exports.SettingsProvider = SettingsProvider;
 /**
  * Global code-server settings file.
  */
-exports.settings = new SettingsProvider(path.join(util_1.xdgLocalDir, "coder.json"));
+exports.settings = new SettingsProvider(path.join(util_1.paths.data, "coder.json"));
 //# sourceMappingURL=settings.js.map
