@@ -18,21 +18,23 @@ RUN sudo locale-gen zh_CN.UTF-8 && \
 # Set USER Config
 ENV HOME_DIR "/home/coder"
 ENV CODE_SERVER_HOME "${HOME_DIR}/.local/share/code-server"
-ENV PATH "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/coder/.local/bin"
 ENV LANG "zh_CN.UTF-8"
 ENV SHELL "/bin/zsh"
+ENV PATH "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/coder/.local/bin"
+ENV LIBRARY_PATH "/home/coder/.local/lib:$LIBRARY_PATH"
+ENV LD_LIBRARY_PATH "/home/coder/.local/lib:$LD_LIBRARY_PATH"
 
 # Setup System
-	#TimeZone
+	# Set China TimeZone
 RUN sudo ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
-	#Local VSCode language
+	# Local VSCode language
 	mkdir -p /home/coder/.local/share/code-server/User && \
 	curl -o ${CODE_SERVER_HOME}/User/locale.json https://raw.githubusercontent.com/FantWings/code-server_cn/master/config/locale.json && \
-	#Basic VSCode Settings
+	# Basic VSCode Settings
 	curl -o ${CODE_SERVER_HOME}/User/settings.json https://raw.githubusercontent.com/FantWings/code-server_cn/master/config/settings.json && \
 	# Init ZSH
 	git clone https://github.com/robbyrussell/oh-my-zsh.git ~/.oh-my-zsh && \
-	curl -o ~/.zshrc https://raw.githubusercontent.com/FantWings/code-server_cn/master/config/zshrc
+	curl -o ~/.zshrc https://raw.githubusercontent.com/FantWings/code-server_cn/master/config/zshrc && \
 
 # Setup User Visual Studio Code Extentions From Internet
 RUN code-server --install-extension donjayamanne.python-extension-pack && \
