@@ -1,6 +1,6 @@
 FROM codercom/code-server
 
-RUN sudo curl -o /etc/apt/source.list https://gitlab.furry.top/FuzzyPaws/tools/code-server_cn/-/raw/master/config/sources.list && \
+RUN sudo curl -o /etc/apt/sources.list https://raw.githubusercontent.com/FantWings/code-server_cn/master/config/sources.list && \
 	sudo apt-get update && sudo apt-get install -y \
 	software-properties-common build-essential \
     apt-transport-https ca-certificates gnupg-agent \
@@ -27,12 +27,12 @@ ENV SHELL "/bin/zsh"
 RUN sudo ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
 	#Local VSCode language
 	mkdir -p /home/coder/.local/share/code-server/User && \
-	curl -o ${CODE_SERVER_HOME}/User/locale.json https://gitlab.furry.top/FuzzyPaws/tools/code-server_cn/-/raw/master/config/locale.json && \
+	curl -o ${CODE_SERVER_HOME}/User/locale.json https://raw.githubusercontent.com/FantWings/code-server_cn/master/config/locale.json && \
 	#Basic VSCode Settings
-	curl -o ${CODE_SERVER_HOME}/User/settings.json https://gitlab.furry.top/FuzzyPaws/tools/code-server_cn/-/raw/master/config/settings.json && \
+	curl -o ${CODE_SERVER_HOME}/User/settings.json https://raw.githubusercontent.com/FantWings/code-server_cn/master/config/settings.json && \
 	# Init ZSH
 	git clone https://github.com/robbyrussell/oh-my-zsh.git ~/.oh-my-zsh && \
-	curl -o ~/.zshrc https://gitlab.furry.top/FuzzyPaws/tools/code-server_cn/-/raw/master/config/zshrc
+	curl -o ~/.zshrc https://raw.githubusercontent.com/FantWings/code-server_cn/master/config/zshrc
 
 # Setup User Visual Studio Code Extentions From Internet
 RUN code-server --install-extension donjayamanne.python-extension-pack && \
