@@ -34,7 +34,7 @@ RUN sudo ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
 	curl -o ${CODE_SERVER_HOME}/User/settings.json https://raw.githubusercontent.com/FantWings/code-server_cn/master/config/settings.json && \
 	# Init ZSH
 	git clone https://github.com/robbyrussell/oh-my-zsh.git ~/.oh-my-zsh && \
-	curl -o ~/.zshrc https://raw.githubusercontent.com/FantWings/code-server_cn/master/config/zshrc && \
+	curl -o ~/.zshrc https://raw.githubusercontent.com/FantWings/code-server_cn/master/config/zshrc
 
 # Setup User Visual Studio Code Extentions From Internet
 RUN code-server --install-extension donjayamanne.python-extension-pack && \
