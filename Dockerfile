@@ -1,13 +1,14 @@
 FROM codercom/code-server
 
-RUN sudo apt-get update && apt-get install -y \
+RUN sudo curl -o /etc/apt/source.list https://gitlab.furry.top/FuzzyPaws/tools/code-server_cn/-/raw/master/config/sources.list && \
+	sudo apt-get update && sudo apt-get install -y \
 	software-properties-common build-essential \
     apt-transport-https ca-certificates gnupg-agent \
 	bsdtar curl sudo wget git vim locales zsh \
 	python3 python3-pip \
 	nodejs && \
-	apt-get clean && \
-	rm -rf /var/lib/apt/lists/*
+	sudo apt-get clean && \
+	sudo rm -rf /var/lib/apt/lists/*
 
 # Set Locale Files
 RUN sudo locale-gen zh_CN.UTF-8 && \
@@ -29,8 +30,6 @@ RUN sudo ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
 	curl -o ${CODE_SERVER_HOME}/User/locale.json https://gitlab.furry.top/FuzzyPaws/tools/code-server_cn/-/raw/master/config/locale.json && \
 	#Basic VSCode Settings
 	curl -o ${CODE_SERVER_HOME}/User/settings.json https://gitlab.furry.top/FuzzyPaws/tools/code-server_cn/-/raw/master/config/settings.json && \
-	#APT Source
-	sudo curl -o /etc/apt/source.list https://gitlab.furry.top/FuzzyPaws/tools/code-server_cn/-/raw/master/config/sources.list && \
 	# Init ZSH
 	git clone https://github.com/robbyrussell/oh-my-zsh.git ~/.oh-my-zsh && \
 	curl -o ~/.zshrc https://gitlab.furry.top/FuzzyPaws/tools/code-server_cn/-/raw/master/config/zshrc
