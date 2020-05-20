@@ -1,6 +1,6 @@
 FROM codercom/code-server
 
-RUN apt-get update && apt-get install -y \
+RUN sudo apt-get update && apt-get install -y \
 	software-properties-common build-essential \
     apt-transport-https ca-certificates gnupg-agent \
 	bsdtar curl sudo wget git vim locales zsh \
