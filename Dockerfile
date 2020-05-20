@@ -1,5 +1,14 @@
 FROM codercom/code-server
 
+RUN apt-get update && apt-get install -y \
+	software-properties-common build-essential \
+    apt-transport-https ca-certificates gnupg-agent \
+	bsdtar curl sudo wget git vim locales zsh \
+	python3 python3-pip \
+	nodejs && \
+	apt-get clean && \
+	rm -rf /var/lib/apt/lists/*
+
 # Set Locale Files
 RUN sudo locale-gen zh_CN.UTF-8 && \
 	sudo locale-gen en_US.UTF-8 && \
