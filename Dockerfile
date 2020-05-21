@@ -48,5 +48,5 @@ RUN code-server --install-extension donjayamanne.python-extension-pack && \
 	code-server --install-extension streetsidesoftware.code-spell-checker && \
 	code-server --install-extension jsjlewis96.one-dark-pro-italic-vivid && \
 	code-server --install-extension waderyan.gitblame && \
-	code-server --install-extension coenraads.bracket-pair-colorizer \
+	code-server --install-extension coenraads.bracket-pair-colorizer && \
 	code-server --install-extension vscode-icons-team.vscode-icons
